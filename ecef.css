@@ -1,0 +1,448 @@
+* {
+box-sizing: border-box;
+padding: 0; margin: 0; 
+}
+
+
+body {
+   background: #fff;
+	padding: 1px;
+}
+
+
+/* ================================================================ 
+This copyright notice must be kept untouched in the stylesheet at 
+all times.
+
+The original version of this stylesheet and the associated (x)html
+is available at http://www.cssplay.co.uk/menus/cssplay-radio-concertina.html
+Copyright (c) Stu Nicholls. All rights reserved.
+This stylesheet and the associated (x)html may be modified in any 
+way to fit your requirements.
+=================================================================== */
+
+ul.menu , ul.menu ul {
+	padding:0; 
+	margin:0; 
+	list-style:none; 
+	position:relative; 
+	font-family:arial, sans-serif;
+}
+ul.menu {z-index:100; padding:10px; border-radius:10px 10px 0 0; margin:0 auto;}
+ul.menu ul {
+	z-index:50;
+	background:#ddd; 
+	border-radius:0 0 10px 10px; 
+	padding-bottom:0;
+	-webkit-transition: 0.5s;
+	-moz-transition: 0.5s;
+	-ms-transition: 0.5s;	
+	-o-transition: 0.5s;
+	transition: 0.5s;
+}
+ul.menu li {line-height:47px; position:relative; text-indent:10px;}
+ul.menu > li {margin-top:2px; font-size:12px;}
+ul.menu label.open {
+	display:block; 
+	background:green url(radio-concertina/d-arrow.gif) no-repeat 170px 12px; 
+	line-height:47px; 
+	position:relative; 
+	z-index:100; 
+	font:bold 12px/47px arial, sans-serif; 
+	color:#fff; 
+}
+ul.menu label.open b {color:#ff0;}
+ul.menu span {
+display:block; 
+line-height:47px; 
+position:relative; 
+z-index:100; 
+border-radius:10px 10px 0 0;
+}
+ul.menu ul li {
+	margin-top:-47px;
+	-webkit-transition: 0.5s;
+	-moz-transition: 0.5s;
+	-ms-transition: 0.5s;
+	-o-transition: 0.5s;
+	transition: 0.5s;
+}
+
+ul.menu ul li {
+	display:block; 
+	font:normal 11px/47px arial, sans-serif; 
+	color:#000; 
+	background:#fff;
+}
+ul.menu ul li :hover {
+}
+ul.menu input {position:absolute; left:-9999px;}
+ul.menu li input:checked + label {background:#069;}
+ul.menu li input:checked ~ ul {background:#fff; padding-bottom:10px;}
+ul.menu li input:checked ~ ul li {margin-top:0;}
+
+ul.menu label.close {
+display:block; 
+width:200px; 
+height:47px;
+line-height:47px;  
+background:transparent url(radio-concertina/u-arrow.gif) no-repeat 170px 12px; 
+position:relative; 
+left:0; 
+z-index:90; 
+margin-top:-47px
+} 
+ul.menu input.tabs:checked ~ label.close {display:block; z-index:200;}
+ul.menu input.close:checked + label.close {display:none;}
+
+ul.menu input.close:checked ~ ul {background:#fff; padding-bottom:0;}
+ul.menu input.close:checked ~ ul li {margin-top:-47px;}
+
+/* end of copyright notice
+/*#################################################################*/
+/*#################################################################*/
+/*#################################################################*/
+/*#################################################################*/
+/*#################################################################*/
+
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+  
+}
+
+[class*="col-"] {
+  float: left;
+  padding: 15px;
+}
+
+html {
+font-family: "Lucida Sans", sans-serif;
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+#gadgets li{
+margin-bottom: 25px;
+font-size:18px;
+text-align:right
+}
+
+.menus li {
+  padding: 8px;
+  margin-bottom: 7px;
+  background-color: #33b5e5;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  text-align:center;
+}
+
+.menus li:hover {
+  background-color: #0099cc;
+}
+
+.aside {
+  background-color: #33b5e5;
+  padding: 15px;
+  color: #ffffff;
+  text-align: center;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+#speed-panel {
+text-align:left;
+margin:0px;
+}
+
+
+@media only screen and (min-width: 600px) {
+  /* For tablets: */
+  .col-s-1 {width: 8.33%;}
+  .col-s-2 {width: 16.66%;}
+  .col-s-3 {width: 25%;}
+  .col-s-4 {width: 33.33%;}
+  .col-s-5 {width: 41.66%;}
+  .col-s-6 {width: 50%;}
+  .col-s-7 {width: 58.33%;}
+  .col-s-8 {width: 66.66%;}
+  .col-s-9 {width: 75%;}
+  .col-s-10 {width: 83.33%;}
+  .col-s-11 {width: 91.66%;}
+  .col-s-12 {width: 100%;}
+}
+@media only screen and (min-width: 768px) {
+  /* For desktop: */
+  .col-1 {width: 8.33%;}
+  .col-2 {width: 16.66%;}
+  .col-3 {width: 25%;}
+  .col-4 {width: 33.33%;}
+  .col-5 {width: 41.66%;}
+  .col-6 {width: 50%;}
+  .col-7 {width: 58.33%;}
+  .col-8 {width: 66.66%;}
+  .col-9 {width: 75%;}
+  .col-10 {width: 83.33%;}
+  .col-11 {width: 91.66%;}
+  .col-12 {width: 100%;}
+}
+
+/* ############################ */
+
+
+	#canvasContainer {
+		width:100%;
+		border:1px solid black; 
+		position:relative;		
+	}	
+	#canvas {
+		width:100%;
+		position:absolute;
+		z-index:80;		
+	}
+	#map {
+		width:100%;
+		position:absolute;
+		z-index:10;
+	}
+
+/*####################################################################*/
+
+#sbar{
+	margin:5px;
+	height:24px;
+	padding:1px;
+}
+
+/*#################################################################*/
+div.cntBotton{
+	margin:10px 0px;
+	line-height:37px;
+	text-align:center;
+	background-color: #33b5e5;
+	color: #ffffff;
+	font-size:18px;
+}
+
+div.cntBotton:hover{
+	background-color: #00ffff;
+	font-weight:bold;
+}
+
+
+.clear{
+	clear:both;
+}
+.fLeft{
+	float:left;
+}
+.fRight{
+	float:right;
+}
+
+
+#speed{
+	font-size:30px;
+	color:#0066cc;
+}
+
+#distance {
+	font-size:30px;
+	color:#00b300;
+}
+
+#Tdistance , #elapsedtime {
+	font-size:30px;
+}
+
+
+
+input[type="file"] {
+    display: none;
+}
+
+.custom-btn {
+	border: 1px solid #0066cc;
+	display: inline-block;
+	width:100%;
+	text-align:center;
+	padding: 10px 12px;
+	cursor: pointer;
+}
+
+.custom-btn:hover {
+	background-color:  #00ffff;
+}
+
+/*####################################################################*/
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 5px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+	margin:0px;
+}
+
+.slider:hover {
+  opacity: 2;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  background: #0066cc;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  background: #0066cc;
+  cursor: pointer;
+}  
+
+/* ############################################################### */
+/* ############################################################### */
+
+/*----- PopUP ============================ */
+
+#dim 
+{
+position:fixed;
+top: 0px;
+left: 0px;  
+width: 100%;
+height:200em;
+background: #a1a1a1;
+z-index: 1000;
+opacity:0.40;
+display:none;
+filter:Alpha(opacity=0); /* IE8 and earlier */
+}
+
+#pop_wrapper 
+{
+position:fixed;
+width: 100%; 
+height:0px;
+top:0px;
+left:0px;
+visibility:hidden;
+filter:Alpha(opacity=0); /* IE8 and earlier */
+-webkit-transition: opacity 0.7s;
+-moz-transition: opacity 0.7s;
+-ms-transition: opacity 0.7s;
+-o-transition: opacity 0.7s;
+transition: opacity 0.7s;
+z-index:1001;
+text-align: center;
+}
+
+#pop_up 
+{
+position: relative; 
+display: inline-block;
+background:#ffffff;
+border-radius: 5px;
+}   
+
+#pop_up_content
+{
+padding:20px;
+overflow-y:auto;
+max-height:600px;
+}
+
+#pop_up_header
+{
+background:#4c9df1;
+line-height:20px;
+text-align:left; 
+padding:5px;
+color:#fff;
+}
+
+#popup_content
+{
+padding:5px;
+}
+#popup_content > div
+{
+display:none;
+}
+
+#closePopUp
+{
+float:right;
+margin-right:4px;
+font-size:16px;
+font-weight:bold;
+cursor:default;
+}
+
+.abcr td{
+padding:3px;
+}
+
+.tleft{
+text-align:right;
+}
+.tright{
+text-align:left;
+}
+/*###########################################*/
+/*###########################################*/
+.flex-container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.flex-container > div {
+/*  vtext-align: center;*/
+}
+
+.divRow{
+display:table-row;
+}
+.divCell{
+display:table-row;
+}
+
+/* ############################################################### */
+
+#squareList{
+list-style-position: inside;
+list-style-type: square;
+}
+
+#squareList li{
+padding:10px;
+}
+
+#docList{
+list-style-position: inside;
+list-style-type: initial;
+}
+
+#docList li{
+padding:10px;
+}
+
+#docList ul{
+list-style-position: inside;
+list-style-type: circle;
+}
+/* ############################################################### */
+
