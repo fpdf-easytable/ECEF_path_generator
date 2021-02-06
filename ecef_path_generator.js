@@ -1,4 +1,11 @@
-
+ /*********************************************************************
+ * ecef_path_generator.js                                             *
+ *                                                                    *
+ * Version: 1.0                                                       *
+ * Date:    13-08-2020                                                *
+ * Author:  Dan Machado                                               *
+ * Require  raphaeljs v2.2.1                                          *
+ **********************************************************************/
 function roundNumber(x, p){
 	var d=2;
 	if(typeof p==='number') {
