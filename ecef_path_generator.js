@@ -14,7 +14,6 @@ function roundNumber(x, p){
 	return (Math.round(x* Math.pow(10, d))/Math.pow(10,d)).toFixed(p);
 }
 
-
 //to load a file
 function readSingleFile(e) {
 	var file = e.target.files[0];
@@ -112,7 +111,8 @@ Conversion={
 		},
 		gridSettings:{stroke: "#2929a3",'stroke-width':0.2, opacity: 0.6},
 		paper:Raphael("canvas", canvasWidth,canvasHeight),
-		mkGrid:function(){
+		
+		/*mkGrid:function(){
 			if(this.grid.length>0){
 				for(var i=0; i<this.grid.length; i++){
 					this.grid[i].remove();
@@ -126,9 +126,46 @@ Conversion={
 			for(var i=0; i<Math.floor(this.Width/this.scaleFactor); i++){
 				this.grid.push(this.paper.path('M'+(i+1)*this.scaleFactor+',0L'+(i+1)*this.scaleFactor+','+this.Height).attr(this.gridSettings));
 			}
+		},//*/
+		
+		wMtPx:0,
+		hMtPx:0,
+		mkGrid:function(){
+			if(this.grid.length>0){
+				for(var i=0; i<this.grid.length; i++){
+					this.grid[i].remove();
+				}
+				this.grid.length=0;
+			}
+
+			var widthM=map.distance(map.containerPointToLatLng(L.point(0, 0)), map.containerPointToLatLng(L.point(this.Width, 0)));
+			this.wMtPx=widthM/this.Width;
+
+			var heightM=map.distance(map.containerPointToLatLng(L.point(0, 0)), map.containerPointToLatLng(L.point(0, this.Height)));
+			this.hMtPx=heightM/this.Height;
+			
+			var hh=1000/this.hMtPx;
+			var hK=Math.floor(this.Height/hh);
+
+			for(var i=0; i<hK; i++){
+				this.grid.push(this.paper.path('M0,'+(i+1)*hh+'L'+this.Width+','+(i+1)*hh).attr(this.gridSettings));
+			}
+
+			var ww=1000/this.wMtPx;
+			var wK=Math.floor(this.Width/ww);
+			
+			this.scaleFactor=Math.floor(ww);
+			this.scFacInv=1.0/this.scaleFactor;
+			
+			for(var i=0; i<wK; i++){
+				this.grid.push(this.paper.path('M'+(i+1)*ww+',0L'+(i+1)*ww+','+this.Height).attr(this.gridSettings));
+			}
 		},
 	};
-	globalSettings.mkGrid();
+
+
+
+	//globalSettings.mkGrid();
 	return globalSettings;
 })();
 
@@ -167,9 +204,9 @@ function drawPath(cbk) {
 		document.onmousemove = null;
 	}
 }
-//####################################################################
-//####################################################################
 
+//####################################################################
+//####################################################################
 //####################################################################
 
 var map = L.map('map',{      
@@ -269,6 +306,12 @@ var controlModule=(function(){
 	module.slider = document.getElementById('speedRange');
 	module.sliderR = document.getElementById('xRange');
 	module.scaleRange = document.getElementById('scaleRange');
+
+	module.setZoom=function(zoomVal){
+		this.fire('scaleChange', zoomVal);
+		this.scaleRange.value=zoomVal;
+	}
+
 	module.init=function(){
 		document.getElementById('upload').addEventListener('change', readSingleFile);
 
@@ -452,11 +495,11 @@ var drawer={
 		});		
 		controlModule.addHandler('scaleChange', function(x){			
 			if(drawer.isResizeble()){
-				globalSettings.setScaleFactor(x);
-				globalSettings.mkGrid();
-				drawer.setScaleFactor(globalSettings.getScaleFactor());
-				var base=14.25;
 				map.setZoom(globalSettings.baseZ+Number(x));	
+				setTimeout(function(){
+					globalSettings.mkGrid();
+					drawer.setScaleFactor(globalSettings.getScaleFactor());
+				}, 500);				
 			}
 			else{
 				alert('In order to change the zoom the current path must be deleted')
@@ -515,6 +558,7 @@ var drawer={
 			gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
 		}
 	},
+
 	deleteLast:function(){
 		if(this.status>0){
 			return;
@@ -865,6 +909,9 @@ function download(filename, text) {
 //####################################################################
 
 drawer.init();	
+
+controlModule.setZoom(-0.50);
+
 
 //####################################################################
 
