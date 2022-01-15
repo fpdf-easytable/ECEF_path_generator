@@ -27,6 +27,168 @@ function readSingleFile(e) {
 		drawer.upload(e.target.result.toString());
 	};
 }
+
+//##################################################################
+
+function distance2DPoints(x1, y1, x2, y2)
+{
+	return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2));
+}
+
+//####################################################################
+
+function distance3DPoints(x1, y1, z1, x2, y2, z2)
+{
+	return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2)+ Math.pow(z1-z2, 2));
+}
+
+//####################################################################
+
+var mkVect2D=(function(){
+	var Vec2D={
+		x:0,
+		y:0,
+		add:function(vect){
+			this.x+=vect.x;
+			this.y+=vect.y;
+		},
+		subs:function(vect){
+			this.x-=vect.x;
+			this.y-=vect.y;
+		},
+		multiply:function(t){
+			this.x*=t;
+			this.y*=t;
+		},
+		add2:function(x, y){
+			this.x+=x;
+			this.y+=y;
+		},
+		length:function(){
+			return distance2DPoints(this.x, this.y, 0, 0);
+		},
+		clone:function(){
+			return mkVect2D(this.x, this.y);
+		},
+		normalise:function(){
+			this.multiply(1.0/this.length());
+		},
+		distance:function(v, y){
+			if(typeof v === "object"){
+				return distance2DPoints(this.x, this.y, v.x, v.y);
+			}
+			return distance2DPoints(this.x, this.y, v, y);
+		},
+		setPositionAt:function(x, y){
+			this.x=x;
+			this.y=y;
+		},
+		isZero:function(){
+			return (this.x==0 && this.y==0);
+		},
+		cos:function(vect){
+			if(!vect.isZero() && !this.isZero()){
+				return (this.x*vect.x+this.y*vect.y)/(this.length() * vect.length());
+			}
+			throw "test vector is zero";
+		},
+		sin:function(v){
+			var cos=this.cos(v);
+			if(typeof cos=="number"){
+				return Math.sqrt(1-cos*cos);
+			}
+			throw "test vector is zero";
+		},
+		isParallel:function(vect){
+			var t=this.cos(vect);
+			if(typeof t=="number"){
+				return Math.abs(t)==1;
+			}
+			throw "not a number";
+		},
+		orthogonal:function(){
+			if(this.x!=0){
+				return mkVect2D(this.y, -1*this.x);
+			}
+			return mkVect2D(-1*this.y, 0); 
+		},
+		rotate:function(ang){
+			var kx=this.x*Math.cos(ang)-this.y*Math.sin(ang);
+			var ky=this.y*Math.cos(ang)+this.x*Math.sin(ang);
+			this.x=kx;
+			this.y=ky;
+		},
+		angle:function(){
+			var cos=this.x/this.length();
+			var ang=Math.acos(cos);
+			if(this.y>0){
+				ang=2*Math.PI-ang;
+			}
+			//console.log('cos: '+cos+' ang: '+ang+ ' deg: '+toDegrees(ang)+' x: '+this.x+' y: '+this.y);
+			return ang;
+		},
+		print:function(){
+			return '('+this.x+', '+this.y+')';
+		},
+	};
+	
+	return function(x, y){
+		var vect=Object.create(Vec2D);
+		vect.setPositionAt(x, y);
+		return vect;
+	}
+})();
+
+
+//##################################################################
+
+var mkVect3D=(function(){
+	var Vec3D={
+		x:0,
+		y:0,
+		z:0,
+		setPositionAt:function(x,y,z){
+			this.x=x;
+			this.y=y;
+			this.z=z;
+		},
+		add:function(vect){
+			this.x+=vect.x;
+			this.y+=vect.y;
+			this.z+=vect.z;
+		},
+		multiply:function(t){
+			this.x*=t;
+			this.y*=t;
+			this.z*=t;
+		},
+		length:function(){
+			return distance3DPoints(this.x, this.y, this.z, 0, 0, 0);
+		},
+		clone:function(){
+			return mkVect3D(this.x, this.y, this.z);
+		},
+		normalise:function(){
+			this.multiply(1.0/this.length());
+		},
+		distance:function(v, y, z){
+			if(typeof v === "object"){
+				return distance3DPoints(this.x, this.y, this.z, v.x, v.y, v.z);
+			}
+			return distance3DPoints(this.x, this.y, this.z, v, y, z);
+		},
+		print:function(){
+			return '('+this.x+', '+this.y+', '+this.z+')';
+		},
+	};
+	
+	return function(x,y,z){
+		var vect=Object.create(Vec3D);
+		vect.setPositionAt(x, y, z);
+		return vect;
+	}
+})();
+
 //####################################################################
 //####################################################################
 
@@ -80,6 +242,43 @@ Conversion={
 
 //####################################################################
 //####################################################################
+
+(function(){
+	const baseFactor=206;
+	const initialZoom=14.25;
+	const zoomDelta=0.25;
+
+	Settings={	
+		alt:30,
+		currentZoom:initialZoom,
+
+		setAltitude:function(centerAlt){
+			this.alt=Number(centerAlt);
+		},
+		
+		initialZoom:function(){
+			return initialZoom;
+		},
+
+		zoomDelta:function(){
+			return zoomDelta;
+		},
+
+		updateZoom:function(deltaZoom){
+			currentZoom+=deltaZoom;
+		},		
+	};
+	return Settings;
+})();
+
+var map = L.map('map',{      
+		minZoom: 0,
+		zoomSnap: 0,
+		zoomDelta: 0.25,
+		zoomControl:false,
+});
+
+
 //####################################################################
 
 
@@ -98,6 +297,7 @@ Conversion={
 	const baseFactor=206;
 	const baseZoom=14.25;
 	globalSettings={
+		canvas:document.getElementById('canvas'),
 		baseZ:baseZoom,
 		grid:[],
 		Height:canvasHeight,
@@ -111,25 +311,10 @@ Conversion={
 		},
 		gridSettings:{stroke: "#2929a3",'stroke-width':0.2, opacity: 0.6},
 		paper:Raphael("canvas", canvasWidth,canvasHeight),
-		
-		/*mkGrid:function(){
-			if(this.grid.length>0){
-				for(var i=0; i<this.grid.length; i++){
-					this.grid[i].remove();
-				}
-				this.grid.length=0;
-			}
-			for(var i=0; i<Math.floor(this.Height/this.scaleFactor); i++){
-				this.grid.push(this.paper.path('M0,'+(i+1)*this.scaleFactor+'L'+this.Width+','+(i+1)*this.scaleFactor).attr(this.gridSettings));
-			}
 
-			for(var i=0; i<Math.floor(this.Width/this.scaleFactor); i++){
-				this.grid.push(this.paper.path('M'+(i+1)*this.scaleFactor+',0L'+(i+1)*this.scaleFactor+','+this.Height).attr(this.gridSettings));
-			}
-		},//*/
-		
 		wMtPx:0,
 		hMtPx:0,
+
 		mkGrid:function(){
 			if(this.grid.length>0){
 				for(var i=0; i<this.grid.length; i++){
@@ -161,9 +346,111 @@ Conversion={
 				this.grid.push(this.paper.path('M'+(i+1)*ww+',0L'+(i+1)*ww+','+this.Height).attr(this.gridSettings));
 			}
 		},
+
+		mtsToPxs:function(mts){
+			return mts*0.001*this.scaleFactor;
+		},
+
+		kmsToPxs:function(kms){
+			return kms*this.scaleFactor;
+		},
+
+		pixelsToKms:function(pxD){
+			return pxD*this.scFacInv;
+		},
+
+		pixelsToMts:function(pxD){
+			return this.pixelsToKms(pxD)*1000.0;
+		},
+
+		containerPointToLatLng:function(pxX, pxY){
+			var mapCenter=map.getCenter();			
+			var lat=mapCenter.lat+Conversion.kmToDDNorth((0.5*this.Height-pxY)*this.scFacInv);
+			var lng=mapCenter.lng+Conversion.kmToDDEast(lat, (pxX-0.5*this.Width)*this.scFacInv);
+			return {'lat':lat, 'lng':lng};
+ 		},
+
+		/*pointToLatLng:function(x, y){
+			return map.c ontainerPointToLatLng(L.point(Math.round(x), Math.round(y)));
+			return map.latLngToContainerPoint(latLng);
+		},//*/
+
+		containerCenter:function(){
+			//return mkVect2D({x:0.5*this.Width, y:0.5*this.Height};
+			return mkVect2D(0.5*this.Width, 0.5*this.Height);
+		},
+
+		latLngToPixelCoordinates:function(latLng){
+			var R=this.mtsToPxs(map.distance(latLng, map.getCenter()));
+
+			var center=this.containerCenter();
+			var pos=map.latLngToContainerPoint(latLng);
+
+			var r=distance2DPoints(center.x, center.y, pos.x, pos.y);
+			var factor=R/r;
+			var x=factor*Math.abs(center.x-pos.x);
+			var y=factor*Math.abs(center.y-pos.y);
+			
+			var pixelsCoordinates={x:(center.x+x), y:(center.y+y)};
+			
+			if(pos.x<=center.x){
+				pixelsCoordinates.x=center.x-x;
+			}
+
+			if(pos.y<=center.y){
+				pixelsCoordinates.y=center.y-y;
+			}
+			return pixelsCoordinates;
+		},
+
+		latLngToMtsCoordinates:function(latLng){
+			//console.log(latLng);
+			var R=map.distance(latLng, map.getCenter());
+
+			//var center=this.containerCenter();
+			var pos=map.latLngToContainerPoint(latLng);
+			var pVect=mkVect2D(pos.x, pos.y);
+			pVect.subs(this.containerCenter());
+			var ratio=R/pVect.length();
+
+			pVect.multiply(ratio);
+			return pVect;
+		},
+
+		reverseTest:function(x, y){
+			var pVect=mkVect2D(this.mtsToPxs(x), this.mtsToPxs(y));
+			pVect.add(this.containerCenter());
+			return pVect;
+		},
+
+		getPosition:function(cbk) {
+			var lx=this.canvas.getBoundingClientRect().left;
+			var ly=this.canvas.getBoundingClientRect().top;
+			var rx=lx+this.Width;
+			var ry=ly+this.Height;
+			canvas.onmousedown=function(){
+				document.onmouseup = closeDrawElement;
+				document.onmousemove = elementDraw;
+			};
+
+			function elementDraw(e) {
+				x=e.clientX;
+				y=e.clientY;
+				if(x>lx && x<rx && y>ly && y<ry){
+					cbk(x-lx, y-ly);//+window.scrollY);
+					//console.log(window.scrollY+' :: '+(y-ly));
+					//cbk(x-lx, y-ly+window.scrollY);
+				}
+			}
+
+			function closeDrawElement() {
+			/* stop moving when mouse button is released:*/
+				document.onmouseup = null;
+				document.onmousemove = null;
+			}
+		},		
+		
 	};
-
-
 
 	//globalSettings.mkGrid();
 	return globalSettings;
@@ -173,48 +460,6 @@ Conversion={
 //####################################################################
 //####################################################################
 //####################################################################
-
-function drawPath(cbk) {
-	var canvas=document.getElementById('canvas');
-	canvas.onmousedown=function(){
-		document.onmouseup = closeDrawElement;
-		document.onmousemove = elementDraw;
-		console.log(window.scrollY);
-	};
-
-	var lx=canvas.getBoundingClientRect().left;
-	var ly=canvas.getBoundingClientRect().top;
-	var x, y;
-	var rx=lx+globalSettings.Width;
-	var ry=ly+globalSettings.Height;
-
-	function elementDraw(e) {
-		x=e.clientX;
-		y=e.clientY;
-		if(x>lx && x<rx && y>ly && y<ry){
-			cbk(x-lx, y-ly);//+window.scrollY);
-			console.log(window.scrollY+' :: '+(y-ly));
-			//cbk(x-lx, y-ly+window.scrollY);
-		}
-	}
-
-	function closeDrawElement() {
-		/* stop moving when mouse button is released:*/
-		document.onmouseup = null;
-		document.onmousemove = null;
-	}
-}
-
-//####################################################################
-//####################################################################
-//####################################################################
-
-var map = L.map('map',{      
-		minZoom: 0,
-		zoomSnap: 0,
-		zoomDelta: 0.25,
-		zoomControl:false,
-});
 
 // add the OpenStreetMap tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -240,62 +485,37 @@ var ZoomViewer = L.Control.extend({
 
 (new ZoomViewer).addTo(map);
 
-map.setView([53.2672, -1.63], 14.25);
-
-
-//####################################################################
-//####################################################################
-
-var Set={
-	set:[],
-	Scale:function(scaleFactor){
-		var tmpBox;
-		this.looping(function(shape){
-			tmpBox=shape.getBBox(); 
-			shape.attr({cx:tmpBox.cx*(scaleFactor), cy:tmpBox.cy*(scaleFactor),r:Math.abs(tmpBox.y-tmpBox.cy)*scaleFactor});
-		});
-	},
-	looping:function(doSomething){
-		var i, len=this.set.length;
-		for(i=0; i<len; i++){
-			doSomething(this.set[i]);
-		}
-	},
-	reset:function(){
-		this.looping(function(shape){
-			shape.remove();
-		});
-		this.set.length=0;
-	},
-	removeLast:function(){
-		if(this.set.length>0){
-			this.set[this.set.length-1].remove();
-			this.set.length--;		
-		}
-	},
-};
+map.setView([53.2672, -1.63], Settings.initialZoom());
 
 //####################################################################
 //####################################################################
 
-var objectEvent={
-	handlers:{},
-	addHandler:function(evt,ck){
-		this.handlers[evt]=this.handlers[evt] || [];
-		this.handlers[evt].push(ck);
-	},
-	fire:function(evt){
-		for(var i in this.handlers[evt]){
-			this.handlers[evt][i].apply(null, Array.prototype.slice.call(arguments, 1));
-		}
-	},
-};
+var mkObjectEvt=(function(){
+	var objectEvent={
+		addHandler:function(evt,ck){
+			this.handlers[evt]=this.handlers[evt] || [];
+			this.handlers[evt].push(ck);
+		},
+		fire:function(evt){
+			for(var i in this.handlers[evt]){
+				this.handlers[evt][i].apply(null, Array.prototype.slice.call(arguments, 1));
+			}
+		},
+	};
+
+	return function(){
+		var module=Object.create(objectEvent);
+		module.handlers={};
+	
+		return module;
+	}
+})();
 
 //####################################################################
 //####################################################################
 
 var controlModule=(function(){
-	var module=Object.create(objectEvent);
+	var module=mkObjectEvt();
 	module.playButton=document.getElementById('player');
 	module.pauseButton=document.getElementById('pause');
 	module.recordButton=document.getElementById('record');
@@ -353,15 +573,11 @@ var controlModule=(function(){
 			module.fire('erase');
 		});
 
-		this.addHandler('scaleChange', function(x){
-			//var base=14.25;
-			//map.setZoom(globalSettings.baseZ+Number(x));	
-		});
-
 		this.addHandler('readyToPlay', function(){
 			module.pauseButton.style.display='none';
 			module.playButton.style.display='block';
 		});
+
 		this.addHandler('recordingFinished', function(){
 			module.recordingButton.style.display='none';
 			module.recordButton.style.display='none';
@@ -393,7 +609,7 @@ var controlModule=(function(){
 //####################################################################
 
 var gadgetModule=(function(){
-	var module=Object.create(objectEvent);
+	var module=mkObjectEvt();
 
 	module.distance=document.getElementById('distance');
 	module.totalDistance=document.getElementById('Tdistance');
@@ -443,18 +659,219 @@ var gadgetModule=(function(){
 	return module;	
 })();
 
+//####################################################################
+//####################################################################
+//####################################################################
 
+var mkObjectPOI=(function(){
+	var objectPOI={
+		updateGeoPosition:false,
+		position3D:null,
+		geoPosition2D:null,// holds coordinates in meters from the center of the map
+		POI:null,
+		lat:'lat',
+		lng:0.0,
+
+		setAttr:function(attributes){
+			this.POI.attr(attributes);
+		},
+
+		pointToLatLng:function(x, y){
+			var latLng=globalSettings.containerPointToLatLng(x, y);
+			this.lat=latLng.lat;
+			this.lng=latLng.lng;
+		},
+
+		setPositionFromMts:function(mtX, mtY){
+			var vct=globalSettings.reverseTest(mtX, mtY);			
+			this.setPositionXY(vct.x, vct.y);
+		},
+
+		setPositionXYZ:function(x, y, z){
+			this.setPositionXY(x, y);
+			this.position3D.z=z;
+		},
+
+		setPositionXY:function(x, y){
+			this.position3D.setPositionAt(x, y, this.position3D.z);
+			this.POI.attr({transform: 't'+this.position3D.x+','+this.position3D.y});
+			this.POI.toFront();
+			//console.log(this.position3D.print());
+			this.pointToLatLng(this.position3D.x, this.position3D.y);
+			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+		},
+		
+		setLatLng:function(latLng){
+			this.lat=latLng.lat;
+			this.lng=latLng.lng;
+			var pos=globalSettings.latLngToPixelCoordinates(latLng);
+			this.position3D.setPositionAt(pos.x, pos.y, this.position3D.z);
+			this.POI.attr({transform: 't'+pos.x+','+pos.y});
+			this.POI.toFront();
+			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+		},
+
+		onZoom:function(){
+			var pos=globalSettings.latLngToPixelCoordinates({'lat':this.lat, 'lng':this.lng});
+			this.position3D.setPositionAt(pos.x, pos.y, this.position3D.z);
+			this.POI.attr({transform: 't'+pos.x+','+pos.y});
+			this.POI.toFront();
+		},
+		
+		moveTo2:function(x, y, ft){
+			this.position3D.setPositionAt(x, y, this.position3D.z);
+			if(true || this.updateGeoPosition)
+			{
+				this.pointToLatLng(this.position3D.x, this.position3D.y);
+				this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+			}
+
+			this.POI.animate({transform: 't'+(this.position3D.x)+','+(this.position3D.y)}, ft, "linear");
+			this.POI.toFront();
+		},
+
+		moveTo:function(spDelta, ft){
+			this.position3D.add(spDelta);
+			if(true || this.updateGeoPosition)
+			{
+				this.pointToLatLng(this.position3D.x, this.position3D.y);
+				this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+			}
+
+			this.POI.animate({transform: 't'+(this.position3D.x)+','+(this.position3D.y)}, ft, "linear");
+			this.POI.toFront();
+		},
+		updatePositionZ:function(z){
+			this.position3D.z=z;
+		},
+
+		getX:function(){
+			return this.position3D.x;
+		},	
+
+		getY:function(){
+			return this.position3D.y;
+		},
+
+		getZ:function(){
+			return this.position3D.z;
+		},
+
+		getGeoX:function(){
+			return this.geoPosition2D.x;
+		},	
+
+		getGeoY:function(){
+			return this.geoPosition2D.y;
+		},
+
+		getGeoZ:function(){
+			return globalSettings.pixelsToMts(this.position3D.z);
+		},
+
+		positionToECEF:function(){
+			this.pointToLatLng(this.position3D.x, this.position3D.y);
+			Conversion.toECEF(this.lat, this.lng, this.position3D.z);
+		},
+		
+		distanceTo:function(poi){
+			return this.geoPosition2D.distance(poi.geoPosition2D);
+		},
+		
+		remove:function(){
+			this.POI.remove();
+		},
+	};
+
+	return function(x, y, z, attributes, radius){
+		var module=Object.create(objectPOI);
+		module.position3D=mkVect3D(0, 0, 0);
+		module.geoPosition3D=mkVect3D(0, 0, 0);
+
+		var poiR=2;
+		var att={stroke:'none'};
+
+		if(typeof attributes!=="undefined" && typeof attributes=='object'){
+			att=attributes
+
+			if(typeof radius!=="undefined"){
+				poiR=radius;
+			} 
+		}
+
+		module.POI=globalSettings.paper.circle(0, 0, poiR);
+		module.POI.attr(att);
+		module.POI.attr({transform: 't0,0'});
+		module.setPositionXYZ(x, y, z);
+
+		return module;
+	}
+})();
+
+function mkPOI(x, y, z, attributes, radius){
+	
+	return mkObjectPOI(x, y, z, attributes, radius);
+};
+
+
+//####################################################################
+//####################################################################
+
+(function(){
+	Trail={
+		set:[],
+
+		looping:function(doSomething){
+			for(var i=0; i<this.set.length; i++){
+				doSomething(this.set[i]);
+			}
+		},
+
+		onZoom:function(){
+			this.looping(function(shape){
+				shape.onZoom();
+			});
+		},
+
+		reset:function(){
+			this.looping(function(shape){
+				shape.remove();
+			});
+			this.set.length=0;
+		},
+
+		removeLast:function(){
+			if(this.set.length>0){
+				this.set[this.set.length-1].remove();
+				this.set.length--;		
+			}
+		},
+
+		mover:null,
+
+		init:function(){
+			this.mover=mkPOI(0,0,0, {stroke:'none', fill: "blue"});
+		},
+
+		addPoint:function(x, y){
+			this.set.push(mkPOI(x, y, 0, {stroke:'none', fill: "#ffb366"}));
+		},
+	};
+
+	return Trail;
+
+})();
+
+//####################################################################
 //####################################################################
 //####################################################################
 
 var drawer={
-	mover:globalSettings.paper.circle(0,0,2).attr({stroke:'none', fill: "blue"}),
-	trail:Object.create(Set),
-	trialSettings:{stroke:'none', fill: "#ffb366"},
 	xT:2,
 	status:0,
 	init:function(){
-		drawPath(function(x,y){
+		
+		globalSettings.getPosition(function(x,y){
 			drawer.getData(x,y);
 		});
 
@@ -492,13 +909,15 @@ var drawer={
 
 		controlModule.addHandler('erase', function(){
 			drawer.deleteLast();
-		});		
+		});
+
 		controlModule.addHandler('scaleChange', function(x){			
-			if(drawer.isResizeble()){
+			if(true || drawer.isResizeble()){
 				map.setZoom(globalSettings.baseZ+Number(x));	
 				setTimeout(function(){
 					globalSettings.mkGrid();
 					drawer.setScaleFactor(globalSettings.getScaleFactor());
+					Trail.onZoom();
 				}, 500);				
 			}
 			else{
@@ -544,16 +963,16 @@ var drawer={
 			var ty=Math.abs(y-this.data[k][1])/r;
 			for(var j=1; j<r; j++){
 				this.data.push([this.data[k][0]+j*tx*f, this.data[k][1]+j*ty*g]);
-				this.trail.set.push(globalSettings.paper.circle(this.data[k][0]+j*tx*f, this.data[k][1]+j*ty*g,2).attr(this.trialSettings));
+				Trail.addPoint(this.data[k][0]+j*tx*f, this.data[k][1]+j*ty*g);
 				this.head++;
 			}
 		}
 
 		if(d>this.mxG ||this.head==0){
-			this.trail.set.push(globalSettings.paper.circle(x,y,2).attr(this.trialSettings));
+			Trail.addPoint(x,y);
 			this.data.push([x, y]);
 			this.head++;
-		
+
 			this.totalDistance+=d;
 			gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
 		}
@@ -563,16 +982,14 @@ var drawer={
 		if(this.status>0){
 			return;
 		}
+		Trail.removeLast();
 		
-		if(this.trail.set.length>0){
-			this.head--;
-			if(this.head>0){
-				this.totalDistance-=this.segmentLength(this.data[this.head], this.data[this.head-1]);
-				gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
-			}
-			this.trail.removeLast();
-			this.data.pop();			
+		this.head--;
+		if(this.head>0){
+			this.totalDistance-=this.segmentLength(this.data[this.head], this.data[this.head-1]);
+			gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
 		}
+		this.data.pop();
 	},
 	counter:0,
 	head:0,
@@ -597,8 +1014,7 @@ var drawer={
 		this.wkDistance=0;
 		this.status=1;
 
-		this.mover.toFront();
-		this.mover.attr({transform: 't'+(this.dataR[this.counter][0])+','+(this.dataR[this.counter][1])});
+		Trail.mover.setPositionXY(this.dataR[this.counter][0], this.dataR[this.counter][1]);
 
 		controlModule.getSlidersInput();
 		gadgetModule.resetTimer();
@@ -621,7 +1037,7 @@ var drawer={
 				return;
 			}
 			if(this.counter<this.dataR.length){
-				gadgetModule.speed.innerHTML=this.speedData[this.counter-1];//this.rSpeed;
+				gadgetModule.speed.innerHTML=this.speedData[this.counter-1];
 
 				r=this.xT*(this.speedData[this.counter-1]*this.scaleFactor)*msH;
 				if(r>0){
@@ -630,7 +1046,8 @@ var drawer={
 					residuo+=(d/r);
 					time=Math.round(residuo);
 					residuo-=time;
-					this.mover.animate({transform: 't'+(this.dataR[this.counter][0])+','+(this.dataR[this.counter][1])}, time, "linear");
+					Trail.mover.moveTo2(this.dataR[this.counter][0], this.dataR[this.counter][1], time);
+					
 					setTimeout(function(){
 						gadgetModule.timer(time);
 						this.run();	
@@ -667,8 +1084,7 @@ var drawer={
 				this.dataR.length=0;
 				this.dataR.push([this.data[0][0], this.data[0][1]]);
 				counterR=1;
-				this.mover.toFront();
-				this.mover.attr({transform: 't'+(this.data[0][0])+','+(this.data[0][1])});
+				Trail.mover.setPositionXY(this.data[0][0], this.data[0][1]);
 				this.counter=0;
 				this.status=1;
 				gadgetModule.startTimer();
@@ -714,7 +1130,7 @@ var drawer={
 					time=Math.round(residuo);
 					residuo-=time;
 
-					this.mover.animate({transform: 't'+(this.dataR[counterR][0])+','+(this.dataR[counterR][1])}, time, "linear");
+					Trail.mover.moveTo2(this.dataR[counterR][0], this.dataR[counterR][1], time);
 
 					setTimeout(function(){
 						gadgetModule.timer(time);
@@ -738,11 +1154,10 @@ var drawer={
 		this.resetRecording=true;
 		this.head=0;
 		this.totalDistance=0;
-		this.trail.reset();
+		Trail.reset();
 		gadgetModule.totalDistance.innerHTML='0.00';
 		gadgetModule.distance.innerHTML='0.00';
 		gadgetModule.speed.innerHTML='0.00';
-		this.mover.attr({transform: 't'+(0)+','+(0)});
 		this.counter=0;
 		this.speedData.length=0;
 		this.heightData.length=0;
@@ -760,7 +1175,7 @@ var drawer={
 		this.resetRecording=true;
 		gadgetModule.distance.innerHTML='0.00';
 		gadgetModule.speed.innerHTML='0.00';
-		this.mover.attr({transform: 't'+(this.data[0][0])+','+(this.data[0][1])});		
+		Trail.mover.setPositionXY(this.data[0][0], this.data[0][1]);		
 		this.counter=0;
 		this.speedData.length=0;
 		this.heightData.length=0;
@@ -771,6 +1186,7 @@ var drawer={
 		gadgetModule.resetTimer();
 		controlModule.getSlidersInput();
 	},
+
 	segmentLength:function(next, prev){
 		return Math.sqrt(Math.pow(next[0]-prev[0], 2)+Math.pow(next[1]-prev[1], 2));
 	},
@@ -912,6 +1328,9 @@ drawer.init();
 
 controlModule.setZoom(-0.50);
 
+setTimeout(function(){
+	Trail.init();
+},500);
 
 //####################################################################
 
