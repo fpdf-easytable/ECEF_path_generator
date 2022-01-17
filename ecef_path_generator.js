@@ -6,6 +6,7 @@
  * Author:  Dan Machado                                               *
  * Require  raphaeljs v2.2.1                                          *
  **********************************************************************/
+
 function roundNumber(x, p){
 	var d=2;
 	if(typeof p==='number') {
@@ -22,7 +23,7 @@ function readSingleFile(e) {
 	}
 
 	var reader = new FileReader();
-	reader.readAsText(file, "UTF-8");
+	reader.readAsTespeedTime(file, "UTF-8");
 	reader.onload = function(e) {
 		drawer.upload(e.target.result.toString());
 	};
@@ -388,6 +389,7 @@ var map = L.map('map',{
 
 			var r=distance2DPoints(center.x, center.y, pos.x, pos.y);
 			var factor=R/r;
+			//console.log('factor: '+factor);
 			var x=factor*Math.abs(center.x-pos.x);
 			var y=factor*Math.abs(center.y-pos.y);
 			
@@ -417,10 +419,8 @@ var map = L.map('map',{
 			return pVect;
 		},
 
-		reverseTest:function(x, y){
-			var pVect=mkVect2D(this.mtsToPxs(x), this.mtsToPxs(y));
-			pVect.add(this.containerCenter());
-			return pVect;
+		mtsCoordinatesToPxs:function(x, y){
+			return mkVect2D(this.mtsToPxs(x)+0.5*this.Width, this.mtsToPxs(y)+0.5*this.Height);
 		},
 
 		getPosition:function(cbk) {
@@ -468,23 +468,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 L.control.scale({maxWidth:300}).addTo(map);
 
-var ZoomViewer = L.Control.extend({
-	onAdd: function(){
-		var container= L.DomUtil.create('div');
-		var gauge = L.DomUtil.create('div');
-		container.style.width = '200px';
-		container.style.background = 'rgba(255,255,255,0.5)';
-		container.style.textAlign = 'left';
-		map.on('zoomstart zoom zoomend', function(ev){
-			gauge.innerHTML = 'Zoom level: ' + map.getZoom();
-		})
-		container.appendChild(gauge);
-		return container;
-	}
-});
-
-(new ZoomViewer).addTo(map);
-
 map.setView([53.2672, -1.63], Settings.initialZoom());
 
 //####################################################################
@@ -514,96 +497,120 @@ var mkObjectEvt=(function(){
 //####################################################################
 //####################################################################
 
-var controlModule=(function(){
-	var module=mkObjectEvt();
-	module.playButton=document.getElementById('player');
-	module.pauseButton=document.getElementById('pause');
-	module.recordButton=document.getElementById('record');
-	module.recordingButton=document.getElementById('recording');
-	module.deleteButton=document.getElementById('delete');
-	module.eraseButton=document.getElementById('erase');
-	module.resetButton=document.getElementById('reset');
-	module.slider = document.getElementById('speedRange');
-	module.sliderR = document.getElementById('xRange');
-	module.scaleRange = document.getElementById('scaleRange');
+(function(){
+	controlModule=mkObjectEvt();
+	controlModule.playButton=document.getElementById('player');
+	controlModule.pauseButton=document.getElementById('pause');
+	controlModule.recordButton=document.getElementById('record');
+	controlModule.recordingButton=document.getElementById('recording');
+	controlModule.deleteButton=document.getElementById('delete');
+	controlModule.eraseButton=document.getElementById('erase');
+	controlModule.resetButton=document.getElementById('reset');
+	controlModule.slider = document.getElementById('speedRange');
+	controlModule.sliderR = document.getElementById('xRange');
+	controlModule.scaleRange = document.getElementById('scaleRange');
 
-	module.setZoom=function(zoomVal){
-		this.fire('scaleChange', zoomVal);
+	controlModule.setZoom=function(zoomVal){
+		//this.fire('scaleChange', zoomVal);
+		map.setZoom(globalSettings.baseZ+Number(zoomVal));
 		this.scaleRange.value=zoomVal;
 	}
 
-	module.init=function(){
+	controlModule.init=function(){
 		document.getElementById('upload').addEventListener('change', readSingleFile);
 
 		this.playButton.addEventListener('click', function () {
-			module.fire('play');
-			module.playButton.style.display='none';
-			module.pauseButton.style.display='block';
+			controlModule.fire('play');
+			controlModule.playButton.style.display='none';
+			controlModule.pauseButton.style.display='block';
 		});
 
 		this.pauseButton.addEventListener('click', function () {
-			module.fire('pause');
-			module.pauseButton.style.display='none';
-			module.playButton.style.display='block';
+			controlModule.fire('pause');
+			controlModule.pauseButton.style.display='none';
+			controlModule.playButton.style.display='block';
 		});
 
 		this.recordButton.addEventListener('click', function () {
-			module.fire('record');
-			module.recordButton.style.display='none';
-			module.recordingButton.style.display='block';
+			controlModule.fire('record');
+			controlModule.recordButton.style.display='none';
+			controlModule.recordingButton.style.display='block';
 		});
 
 		this.deleteButton.addEventListener('click', function () {
-			module.fire('delete');
-			module.pauseButton.style.display='none';
-			module.playButton.style.display='none';
-			module.recordingButton.style.display='none';
-			module.recordButton.style.display='block';
+			controlModule.fire('delete');
+			controlModule.pauseButton.style.display='none';
+			controlModule.playButton.style.display='none';
+			controlModule.recordingButton.style.display='none';
+			controlModule.recordButton.style.display='block';
 		});
 
 		this.resetButton.addEventListener('click', function () {
-			module.fire('reset');
-			module.pauseButton.style.display='none';
-			module.playButton.style.display='none';
-			module.recordingButton.style.display='none';
-			module.recordButton.style.display='block';
+			controlModule.fire('reset');
+			controlModule.pauseButton.style.display='none';
+			controlModule.playButton.style.display='none';
+			controlModule.recordingButton.style.display='none';
+			controlModule.recordButton.style.display='block';
 		});
 
 		this.eraseButton.addEventListener('click', function () {
-			module.fire('erase');
+			controlModule.fire('erase');
 		});
 
 		this.addHandler('readyToPlay', function(){
-			module.pauseButton.style.display='none';
-			module.playButton.style.display='block';
+			controlModule.pauseButton.style.display='none';
+			controlModule.playButton.style.display='block';
 		});
 
 		this.addHandler('recordingFinished', function(){
-			module.recordingButton.style.display='none';
-			module.recordButton.style.display='none';
-			module.playButton.style.display='block';
+			controlModule.recordingButton.style.display='none';
+			controlModule.recordButton.style.display='none';
+			controlModule.playButton.style.display='block';
 		});
 
 		this.slider.oninput = function() {
-			module.fire('speedRange', roundNumber(this.value,2));
+			controlModule.fire('speedRange', roundNumber(this.value,2));
 		}
 
 		this.sliderR.oninput = function() {
-			module.fire('timeFactor', this.value); 
+			controlModule.fire('timeFactor', this.value); 
 			document.getElementById('speedUp').innerHTML='x'+Math.pow(2,this.value);
 		}
 		
 		this.scaleRange.oninput = function() {
-			module.fire('scaleChange', this.value); 
+			map.setZoom(globalSettings.baseZ+Number(this.value));	
+			controlModule.fire('scaleChange', this.value); 
 		}
 	};
 
-	module.getSlidersInput=function(){
-		module.slider.oninput();
-		module.sliderR.oninput();
+	controlModule.getSlidersInput=function(){
+		controlModule.slider.oninput();
+		controlModule.sliderR.oninput();
 	};
-	return module;
+	return controlModule;
 })();
+
+//####################################################################
+
+
+var ZoomViewer = L.Control.extend({
+	onAdd: function(){
+		var container= L.DomUtil.create('div');
+		var gauge = L.DomUtil.create('div');
+		container.style.width = '200px';
+		container.style.background = 'rgba(255,255,255,0.5)';
+		container.style.tespeedTimeAlign = 'left';
+		map.on('zoomstart zoom zoomend', function(ev){
+			gauge.innerHTML = 'Zoom level: ' + map.getZoom();
+			controlModule.fire('scaleChange', map.getZoom()-globalSettings.baseZ);
+
+		})
+		container.appendChild(gauge);
+		return container;
+	}
+});
+
+(new ZoomViewer).addTo(map);
 
 //####################################################################
 //####################################################################
@@ -628,11 +635,11 @@ var gadgetModule=(function(){
 		module.setFactor=function(x){
 			factor=Math.pow(2, x);
 		}
-
+		var rf=1.0/1000;
 		return function(t){
-			time+=t;
-			k=roundNumber(0.07+factor*time/1000, 2);
-			module.elapsedTime.innerHTML=k;
+			time+=factor*t;
+			k=roundNumber(time*rf, 2);
+			gadgetModule.elapsedTime.innerHTML=k;
 		}
 	})();
 
@@ -663,7 +670,7 @@ var gadgetModule=(function(){
 //####################################################################
 //####################################################################
 
-var mkObjectPOI=(function(){
+var mkPOI=(function(){
 	var objectPOI={
 		updateGeoPosition:false,
 		position3D:null,
@@ -683,8 +690,15 @@ var mkObjectPOI=(function(){
 		},
 
 		setPositionFromMts:function(mtX, mtY){
-			var vct=globalSettings.reverseTest(mtX, mtY);			
-			this.setPositionXY(vct.x, vct.y);
+			var vct=globalSettings.mtsCoordinatesToPxs(mtX, mtY);			
+			//this.setPositionXY(vct.x, vct.y);
+
+			this.position3D.setPositionAt(vct.x, vct.y, this.position3D.z);
+			this.POI.attr({transform: 't'+this.position3D.x+','+this.position3D.y});
+			this.POI.toFront();
+			//console.log(this.position3D.print());
+			this.pointToLatLng(this.position3D.x, this.position3D.y);
+			this.geoPosition2D.setPositionAt(mtX, mtY);
 		},
 
 		setPositionXYZ:function(x, y, z){
@@ -808,11 +822,6 @@ var mkObjectPOI=(function(){
 	}
 })();
 
-function mkPOI(x, y, z, attributes, radius){
-	
-	return mkObjectPOI(x, y, z, attributes, radius);
-};
-
 
 //####################################################################
 //####################################################################
@@ -820,6 +829,7 @@ function mkPOI(x, y, z, attributes, radius){
 (function(){
 	Trail={
 		set:[],
+		directions:[],
 
 		looping:function(doSomething){
 			for(var i=0; i<this.set.length; i++){
@@ -850,11 +860,80 @@ function mkPOI(x, y, z, attributes, radius){
 		mover:null,
 
 		init:function(){
-			this.mover=mkPOI(0,0,0, {stroke:'none', fill: "blue"});
+			this.mover=globalSettings.paper.circle(0, 0, 2);
+			this.mover.attr({stroke:'none', fill: "blue"});
+			this.mover.attr({transform: 't0,0'});
+		},
+
+		positioning:function(latLng){
+			var pos=globalSettings.latLngToPixelCoordinates(latLng);
+			this.mover.attr({transform: 't'+pos.x+','+pos.y});
+			this.mover.toFront();
+		},
+
+		movingTo:function(latLng, ft){
+			var pos=globalSettings.latLngToPixelCoordinates(latLng);
+			this.mover.animate({transform: 't'+pos.x+','+pos.y}, ft, "linear");
+			this.mover.toFront();
 		},
 
 		addPoint:function(x, y){
 			this.set.push(mkPOI(x, y, 0, {stroke:'none', fill: "#ffb366"}));
+			if(this.set.length>1){
+				var i=this.set.length-2;
+				this.directions.push(mkVect2D(x-this.getX(i), -1*(y-this.getY)));
+				this.directions[i].normalise();
+			}
+		},
+		distanceToNext:function(i){
+			if(i<this.set.length-1){
+				return this.set[i].distance(this.set[i+1]);
+			}
+			throw "something wrong!";
+		},
+		currentSegment:0,
+		currentSegmentLength:0,
+		currentLength:0,
+		idx:0,
+		currentPosition:mkVect3D(0,0,0),
+		moveToStart:function(){
+			this.currentPosition.setPositionAt(this.getX(0), this.getY(0), this.getZ(0));
+			this.currentLength=0;
+			this.idx=0;
+			this.currentSegmentLength=this.distanceToNext(0);
+		},
+
+		movingDelta:function(delta, ft){
+			if(this.currentSegmentLength>0){
+				var t=delta;
+				if(this.currentSegmentLength>deltaFactor){
+					this.currentSegmentLength-=deltaFactor;
+				}
+				else{
+					t=this.currentSegmentLength;
+					deltaFactor-=t;
+				}
+				this.currentPosition.setPositionAt(t*this.directions[idx].x, t*this.directions[idx].y, 0)		
+			}
+			else{
+				if(this.idx<this.set.length-1){
+					this.idx++;
+					return true;
+				}
+			}
+		},
+
+		getX:function(index){
+			//console.log(index+' ::: '+this.set[index].position3D.print()+' ::: '+this.set[index].getX());
+			return this.set[index].getX();
+		},
+
+		getY:function(index){
+			return this.set[index].getY();
+		},
+		
+		movePointer:function(){
+			
 		},
 	};
 
@@ -867,7 +946,7 @@ function mkPOI(x, y, z, attributes, radius){
 //####################################################################
 
 var drawer={
-	xT:2,
+	speedTime:2,
 	status:0,
 	init:function(){
 		
@@ -878,12 +957,12 @@ var drawer={
 		controlModule.init();
 
 		controlModule.addHandler('speedRange', function(x){
-			drawer['rSpeed']=x;
+			drawer['speed']=x;
 			document.getElementById('speed').innerHTML=x;
 		});
 
 		controlModule.addHandler('timeFactor', function(x){
-			drawer['xT']=Math.pow(2, x);
+			drawer['speedTime']=Math.pow(2, x);
 			gadgetModule.changeTimeFactor(x);
 		});
 
@@ -913,12 +992,9 @@ var drawer={
 
 		controlModule.addHandler('scaleChange', function(x){			
 			if(true || drawer.isResizeble()){
-				map.setZoom(globalSettings.baseZ+Number(x));	
-				setTimeout(function(){
-					globalSettings.mkGrid();
-					drawer.setScaleFactor(globalSettings.getScaleFactor());
-					Trail.onZoom();
-				}, 500);				
+				globalSettings.mkGrid();
+				drawer.setScaleFactor(globalSettings.getScaleFactor());
+				Trail.onZoom();
 			}
 			else{
 				alert('In order to change the zoom the current path must be deleted')
@@ -945,10 +1021,33 @@ var drawer={
 		}
 		var d=0;
 		if(this.head>0){
-			d=Math.sqrt(Math.pow(x-this.data[this.head-1][0], 2)+Math.pow(y-this.data[this.head-1][1], 2));
+			//d=Math.sqrt(Math.pow(x-this.data[this.head-1][0], 2)+Math.pow(y-this.data[this.head-1][1], 2));
+			d=distance2DPoints(Trail.getX(this.head-1), Trail.getY(this.head-1), x, y);
+			//Math.sqrt(Math.pow(x-this.data[this.head-1][0], 2)+Math.pow(y-this.data[this.head-1][1], 2));
 		}
+		//console.log(d+' '+this.head);
 
 		if(d>this.mxG){
+			var k=this.head-1;
+			var r=Math.ceil(d/this.mxG);
+			var f=1;
+			if(x-Trail.getX(k)<0){
+				f=-1;
+			}
+			var g=1;
+			if(y-Trail.getY(k)<0){
+				g=-1;
+			}
+			var tx=Math.abs(x-Trail.getX(k))/r;
+			var ty=Math.abs(y-Trail.getY(k))/r;
+			for(var j=1; j<r; j++){
+				this.data.push([Trail.getX(k)+j*tx*f, Trail.getY(k)+j*ty*g]);
+				Trail.addPoint(Trail.getX(k)+j*tx*f, Trail.getY(k)+j*ty*g);
+				this.head++;
+			}
+		}
+
+		/*if(d>this.mxG){
 			var k=this.head-1;
 			var r=Math.ceil(d/this.mxG);
 			var f=1;
@@ -966,9 +1065,9 @@ var drawer={
 				Trail.addPoint(this.data[k][0]+j*tx*f, this.data[k][1]+j*ty*g);
 				this.head++;
 			}
-		}
+		}//*/
 
-		if(d>this.mxG ||this.head==0){
+		if(d>this.mxG || this.head==0){
 			Trail.addPoint(x,y);
 			this.data.push([x, y]);
 			this.head++;
@@ -998,7 +1097,7 @@ var drawer={
 		this.paused=true;
 	},
 	isRunning:false,
-	rSpeed:1,
+	speed:1,
 	play:function(){
 		if(this.paused){
 			gadgetModule.startTimer();
@@ -1014,13 +1113,13 @@ var drawer={
 		this.wkDistance=0;
 		this.status=1;
 
-		Trail.mover.setPositionXY(this.dataR[this.counter][0], this.dataR[this.counter][1]);
+		Trail.positioning(this.recordedData[this.counter]);
 
 		controlModule.getSlidersInput();
 		gadgetModule.resetTimer();
 		gadgetModule.startTimer();
 
-		if(this.rSpeed>0){
+		if(this.speed>0){
 			this.isRunning=true;
 			this.counter++;
 			this.run();
@@ -1039,15 +1138,15 @@ var drawer={
 			if(this.counter<this.dataR.length){
 				gadgetModule.speed.innerHTML=this.speedData[this.counter-1];
 
-				r=this.xT*(this.speedData[this.counter-1]*this.scaleFactor)*msH;
+				r=this.speedTime*(this.speedData[this.counter-1]*this.scaleFactor)*msH;
 				if(r>0){
 					d=this.squareData[this.counter-1];
 					
 					residuo+=(d/r);
 					time=Math.round(residuo);
 					residuo-=time;
-					Trail.mover.moveTo2(this.dataR[this.counter][0], this.dataR[this.counter][1], time);
-					
+					Trail.movingTo(this.recordedData[this.counter], time);
+
 					setTimeout(function(){
 						gadgetModule.timer(time);
 						this.run();	
@@ -1067,11 +1166,15 @@ var drawer={
 
 	resetRecording:true,
 	squareData:[],
+	recordedData:[],
+	addRecordedData:function(x, y){
+		this.recordedData.push(globalSettings.containerPointToLatLng(x, y));
+	},
 	dataR:[],
 
 	record:(function(){
 		const msH=1/3600000;
-		var residuo, d, time, p=0;
+		var residuo, d, time, p=0, r;
 		var counterR=0;
 		return function(){
 			if(this.head==0){
@@ -1082,45 +1185,56 @@ var drawer={
 				residuo=0;
 				this.resetRecording=false;
 				this.dataR.length=0;
-				this.dataR.push([this.data[0][0], this.data[0][1]]);
+				//this.dataR.push([this.data[0][0], this.data[0][1]]);
+				this.dataR.push([Trail.getX(0), Trail.getY(0)]);
+				this.recordedData.length=0;
+				this.addRecordedData(Trail.getX(0), Trail.getY(0));
+
 				counterR=1;
-				Trail.mover.setPositionXY(this.data[0][0], this.data[0][1]);
+				Trail.positioning(this.recordedData[0]);
 				this.counter=0;
 				this.status=1;
 				gadgetModule.startTimer();
 			}
 
 			if(p>0 || this.counter<this.head-1){
-				this.speedData[counterR-1]=this.rSpeed;
-				r=this.xT*(this.rSpeed*this.scaleFactor)*msH;
+				this.speedData[counterR-1]=this.speed;
+				r=this.speedTime*(this.speed*this.scaleFactor)*msH;
+				
 				if(r>0){
-					if(p==0){			
+					if(p==0){
 						p=1;
 						this.counter++;
-						this.dataR.push([this.data[this.counter][0], this.data[this.counter][1]]);
-						
-						d=Math.sqrt(Math.pow(this.dataR[counterR][0]-this.dataR[counterR-1][0], 2)+Math.pow(this.dataR[counterR][1]-this.dataR[counterR-1][1], 2));					
+						//this.dataR.push([this.data[this.counter][0], this.data[this.counter][1]]);
+						this.dataR.push([Trail.getX(this.counter), Trail.getY(this.counter)]);
+						this.addRecordedData(Trail.getX(this.counter), Trail.getY(this.counter));
+
+						//d=Math.sqrt(Math.pow(this.dataR[counterR][0]-this.dataR[counterR-1][0], 2)+Math.pow(this.dataR[counterR][1]-this.dataR[counterR-1][1], 2));
+						d=distance2DPoints(Trail.getX(this.counter),  Trail.getY(this.counter), Trail.getX(this.counter-1),  Trail.getY(this.counter-1));
 						time=d/r;
 						
 						if(time>400){							
 							this.dataR.pop();
+							this.recordedData.pop();
 							p=Math.ceil(time/250);
 
 							var f=1;
-							if(this.data[this.counter][0]-this.data[this.counter-1][0]<0){
+							if(Trail.getX(this.counter)-Trail.getX(this.counter-1)<0){
 								f=-1;
 							}
 							var g=1;
-							if(this.data[this.counter][1]-this.data[this.counter-1][1]<0){
+							if(Trail.getY(this.counter)-Trail.getY(this.counter-1)<0){
 								g=-1;
 							}
-							var tx=Math.abs(this.data[this.counter][0]-this.data[this.counter-1][0])/p;
-							var ty=Math.abs(this.data[this.counter][1]-this.data[this.counter-1][1])/p;
+							var tx=Math.abs(Trail.getX(this.counter)-Trail.getX(this.counter-1))/p;
+							var ty=Math.abs(Trail.getY(this.counter)-Trail.getY(this.counter-1))/p;
 						
 							for(var j=1; j<p; j++){
 								this.dataR.push([this.data[this.counter-1][0]+j*tx*f, this.data[this.counter-1][1]+j*ty*g]);
+								this.addRecordedData(this.data[this.counter-1][0]+j*tx*f, this.data[this.counter-1][1]+j*ty*g);
 							}
 							this.dataR.push([this.data[this.counter][0], this.data[this.counter][1]]);
+							this.addRecordedData(this.data[this.counter][0], this.data[this.counter][1]);
 						}
 					}
 					
@@ -1130,7 +1244,7 @@ var drawer={
 					time=Math.round(residuo);
 					residuo-=time;
 
-					Trail.mover.moveTo2(this.dataR[counterR][0], this.dataR[counterR][1], time);
+					Trail.movingTo(this.recordedData[counterR], time);
 
 					setTimeout(function(){
 						gadgetModule.timer(time);
@@ -1147,6 +1261,7 @@ var drawer={
 			}
 		}
 	}()),
+	
 	erase:function(){
 		this.data.length=0;
 		this.dataR.length=0;
@@ -1182,13 +1297,13 @@ var drawer={
 		this.wkDistance=0;
 		this.isRunning=false;
 		this.paused=false;
-		this.rSpeed=1;
+		this.speed=1;
 		gadgetModule.resetTimer();
 		controlModule.getSlidersInput();
 	},
 
-	segmentLength:function(next, prev){
-		return Math.sqrt(Math.pow(next[0]-prev[0], 2)+Math.pow(next[1]-prev[1], 2));
+	segmentLength:function(nespeedTime, prev){
+		return Math.sqrt(Math.pow(nespeedTime[0]-prev[0], 2)+Math.pow(nespeedTime[1]-prev[1], 2));
 	},
 	changeFrequency:function(newFrequency){
 		this.frequency=newFrequency;
@@ -1284,7 +1399,7 @@ var drawer={
 		result+=JSON.stringify(this.squareData)+"\n";
 		result+=JSON.stringify(this.speedData)+"\n";
 		result+=JSON.stringify(this.heightData);
-		download(fileName+".txt",result);
+		download(fileName+".tspeedTime",result);
 	},
 	upload:function(fileContents){
 		this.erase();
@@ -1310,9 +1425,9 @@ var drawer={
 
 //####################################################################
 
-function download(filename, text) {
+function download(filename, tespeedTime) {
 	var element = document.createElement('a');
-	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+	element.setAttribute('href', 'data:tespeedTime/plain;charset=utf-8,' + encodeURIComponent(tespeedTime));
 	element.setAttribute('download', filename);
 	element.style.display = 'none';
 	document.body.appendChild(element);
