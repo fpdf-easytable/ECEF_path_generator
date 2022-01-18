@@ -100,34 +100,33 @@ var mkVect2D=(function(){
 			}
 			throw "test vector is zero";
 		},
-		isParallel:function(vect){
+		/*isParallel:function(vect){
 			var t=this.cos(vect);
 			if(typeof t=="number"){
 				return Math.abs(t)==1;
 			}
 			throw "not a number";
-		},
-		orthogonal:function(){
+		},//*/
+		/*orthogonal:function(){
 			if(this.x!=0){
 				return mkVect2D(this.y, -1*this.x);
 			}
 			return mkVect2D(-1*this.y, 0); 
-		},
+		},//*/
 		rotate:function(ang){
 			var kx=this.x*Math.cos(ang)-this.y*Math.sin(ang);
 			var ky=this.y*Math.cos(ang)+this.x*Math.sin(ang);
 			this.x=kx;
 			this.y=ky;
 		},
-		angle:function(){
+		/*angle:function(){
 			var cos=this.x/this.length();
 			var ang=Math.acos(cos);
 			if(this.y>0){
 				ang=2*Math.PI-ang;
 			}
-			//console.log('cos: '+cos+' ang: '+ang+ ' deg: '+toDegrees(ang)+' x: '+this.x+' y: '+this.y);
 			return ang;
-		},
+		},//*/
 		print:function(){
 			return '('+this.x+', '+this.y+')';
 		},
@@ -139,7 +138,6 @@ var mkVect2D=(function(){
 		return vect;
 	}
 })();
-
 
 //##################################################################
 
@@ -282,7 +280,6 @@ var map = L.map('map',{
 
 //####################################################################
 
-
 (function(){
 	var container=document.getElementById('container');
 	var speedPanel=document.getElementById('speed-panel');
@@ -405,18 +402,20 @@ var map = L.map('map',{
 			return pixelsCoordinates;
 		},
 
-		latLngToMtsCoordinates:function(latLng){
-			//console.log(latLng);
+		latLngToMtsCoordinates2:function(latLng){
 			var R=map.distance(latLng, map.getCenter());
 
-			//var center=this.containerCenter();
-			var pos=map.latLngToContainerPoint(latLng);
-			var pVect=mkVect2D(pos.x, pos.y);
-			pVect.subs(this.containerCenter());
-			var ratio=R/pVect.length();
+			var center=this.containerCenter();
 
-			pVect.multiply(ratio);
-			return pVect;
+			var pos=map.latLngToContainerPoint(latLng);
+			
+			var r=distance2DPoints(center.x, center.y, pos.x, pos.y);
+			var factor=R/r;
+			
+			var px=factor*(pos.x-center.x);
+			var py=factor*(center.y-pos.y);
+			
+			return {x:px, y:py};
 		},
 
 		mtsCoordinatesToPxs:function(x, y){
@@ -437,14 +436,13 @@ var map = L.map('map',{
 				x=e.clientX;
 				y=e.clientY;
 				if(x>lx && x<rx && y>ly && y<ry){
-					cbk(x-lx, y-ly);//+window.scrollY);
+					cbk(x-lx, y-ly);
 					//console.log(window.scrollY+' :: '+(y-ly));
 					//cbk(x-lx, y-ly+window.scrollY);
 				}
 			}
 
 			function closeDrawElement() {
-			/* stop moving when mouse button is released:*/
 				document.onmouseup = null;
 				document.onmousemove = null;
 			}
@@ -452,7 +450,6 @@ var map = L.map('map',{
 		
 	};
 
-	//globalSettings.mkGrid();
 	return globalSettings;
 })();
 
@@ -511,7 +508,6 @@ var mkObjectEvt=(function(){
 	controlModule.scaleRange = document.getElementById('scaleRange');
 
 	controlModule.setZoom=function(zoomVal){
-		//this.fire('scaleChange', zoomVal);
 		map.setZoom(globalSettings.baseZ+Number(zoomVal));
 		this.scaleRange.value=zoomVal;
 	}
@@ -591,7 +587,6 @@ var mkObjectEvt=(function(){
 })();
 
 //####################################################################
-
 
 var ZoomViewer = L.Control.extend({
 	onAdd: function(){
@@ -691,12 +686,10 @@ var mkPOI=(function(){
 
 		setPositionFromMts:function(mtX, mtY){
 			var vct=globalSettings.mtsCoordinatesToPxs(mtX, mtY);			
-			//this.setPositionXY(vct.x, vct.y);
 
 			this.position3D.setPositionAt(vct.x, vct.y, this.position3D.z);
 			this.POI.attr({transform: 't'+this.position3D.x+','+this.position3D.y});
 			this.POI.toFront();
-			//console.log(this.position3D.print());
 			this.pointToLatLng(this.position3D.x, this.position3D.y);
 			this.geoPosition2D.setPositionAt(mtX, mtY);
 		},
@@ -712,7 +705,7 @@ var mkPOI=(function(){
 			this.POI.toFront();
 			//console.log(this.position3D.print());
 			this.pointToLatLng(this.position3D.x, this.position3D.y);
-			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+			this.geoPosition2D=globalSettings.latLngToMtsCoordinates2({'lat':this.lat, 'lng':this.lng});
 		},
 		
 		setLatLng:function(latLng){
@@ -722,7 +715,7 @@ var mkPOI=(function(){
 			this.position3D.setPositionAt(pos.x, pos.y, this.position3D.z);
 			this.POI.attr({transform: 't'+pos.x+','+pos.y});
 			this.POI.toFront();
-			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+			this.geoPosition2D=globalSettings.latLngToMtsCoordinates2({'lat':this.lat, 'lng':this.lng});
 		},
 
 		onZoom:function(){
@@ -737,7 +730,7 @@ var mkPOI=(function(){
 			if(true || this.updateGeoPosition)
 			{
 				this.pointToLatLng(this.position3D.x, this.position3D.y);
-				this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+				this.geoPosition2D=globalSettings.latLngToMtsCoordinates2({'lat':this.lat, 'lng':this.lng});
 			}
 
 			this.POI.animate({transform: 't'+(this.position3D.x)+','+(this.position3D.y)}, ft, "linear");
@@ -749,7 +742,7 @@ var mkPOI=(function(){
 			if(true || this.updateGeoPosition)
 			{
 				this.pointToLatLng(this.position3D.x, this.position3D.y);
-				this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+				this.geoPosition2D=globalSettings.latLngToMtsCoordinates2({'lat':this.lat, 'lng':this.lng});
 			}
 
 			this.POI.animate({transform: 't'+(this.position3D.x)+','+(this.position3D.y)}, ft, "linear");
@@ -924,14 +917,21 @@ var mkPOI=(function(){
 		},
 
 		getX:function(index){
-			//console.log(index+' ::: '+this.set[index].position3D.print()+' ::: '+this.set[index].getX());
 			return this.set[index].getX();
 		},
 
 		getY:function(index){
 			return this.set[index].getY();
 		},
-		
+
+		getGeoX:function(index){
+			return this.set[index].getGeoX();
+		},
+
+		getGeoY:function(index){
+			return this.set[index].getGeoY();
+		},
+
 		movePointer:function(){
 			
 		},
@@ -1021,11 +1021,8 @@ var drawer={
 		}
 		var d=0;
 		if(this.head>0){
-			//d=Math.sqrt(Math.pow(x-this.data[this.head-1][0], 2)+Math.pow(y-this.data[this.head-1][1], 2));
 			d=distance2DPoints(Trail.getX(this.head-1), Trail.getY(this.head-1), x, y);
-			//Math.sqrt(Math.pow(x-this.data[this.head-1][0], 2)+Math.pow(y-this.data[this.head-1][1], 2));
 		}
-		//console.log(d+' '+this.head);
 
 		if(d>this.mxG){
 			var k=this.head-1;
@@ -1046,26 +1043,6 @@ var drawer={
 				this.head++;
 			}
 		}
-
-		/*if(d>this.mxG){
-			var k=this.head-1;
-			var r=Math.ceil(d/this.mxG);
-			var f=1;
-			if(x-this.data[k][0]<0){
-				f=-1;
-			}
-			var g=1;
-			if(y-this.data[k][1]<0){
-				g=-1;
-			}
-			var tx=Math.abs(x-this.data[k][0])/r;
-			var ty=Math.abs(y-this.data[k][1])/r;
-			for(var j=1; j<r; j++){
-				this.data.push([this.data[k][0]+j*tx*f, this.data[k][1]+j*ty*g]);
-				Trail.addPoint(this.data[k][0]+j*tx*f, this.data[k][1]+j*ty*g);
-				this.head++;
-			}
-		}//*/
 
 		if(d>this.mxG || this.head==0){
 			Trail.addPoint(x,y);
@@ -1177,7 +1154,8 @@ var drawer={
 		var residuo, d, time, p=0, r;
 		var counterR=0;
 		return function(){
-			if(this.head==0){
+			if(this.head==0){				
+				controlModule.fire('reset');
 				return;
 			}
 			if(this.resetRecording){
@@ -1185,8 +1163,8 @@ var drawer={
 				residuo=0;
 				this.resetRecording=false;
 				this.dataR.length=0;
-				//this.dataR.push([this.data[0][0], this.data[0][1]]);
-				this.dataR.push([Trail.getX(0), Trail.getY(0)]);
+				//this.dataR.push([Trail.getX(0), Trail.getY(0)]);
+				this.dataR.push([Trail.getGeoX(0), Trail.getGeoY(0)]);
 				this.recordedData.length=0;
 				this.addRecordedData(Trail.getX(0), Trail.getY(0));
 
@@ -1205,16 +1183,15 @@ var drawer={
 					if(p==0){
 						p=1;
 						this.counter++;
-						//this.dataR.push([this.data[this.counter][0], this.data[this.counter][1]]);
-						this.dataR.push([Trail.getX(this.counter), Trail.getY(this.counter)]);
+						//this.dataR.push([Trail.getX(this.counter), Trail.getY(this.counter)]);
+						this.dataR.push([Trail.getGeoX(this.counter), Trail.getGeoY(this.counter)]);
 						this.addRecordedData(Trail.getX(this.counter), Trail.getY(this.counter));
 
-						//d=Math.sqrt(Math.pow(this.dataR[counterR][0]-this.dataR[counterR-1][0], 2)+Math.pow(this.dataR[counterR][1]-this.dataR[counterR-1][1], 2));
 						d=distance2DPoints(Trail.getX(this.counter),  Trail.getY(this.counter), Trail.getX(this.counter-1),  Trail.getY(this.counter-1));
 						time=d/r;
 						
 						if(time>400){							
-							this.dataR.pop();
+							//this.dataR.pop();
 							this.recordedData.pop();
 							p=Math.ceil(time/250);
 
@@ -1233,8 +1210,9 @@ var drawer={
 								this.dataR.push([this.data[this.counter-1][0]+j*tx*f, this.data[this.counter-1][1]+j*ty*g]);
 								this.addRecordedData(this.data[this.counter-1][0]+j*tx*f, this.data[this.counter-1][1]+j*ty*g);
 							}
-							this.dataR.push([this.data[this.counter][0], this.data[this.counter][1]]);
-							this.addRecordedData(this.data[this.counter][0], this.data[this.counter][1]);
+							//this.dataR.push([this.data[this.counter][0], this.data[this.counter][1]]);
+							//this.addRecordedData(this.data[this.counter][0], this.data[this.counter][1]);
+							this.addRecordedData(Trail.getX(this.counter), Trail.getY(this.counter));
 						}
 					}
 					
@@ -1290,7 +1268,8 @@ var drawer={
 		this.resetRecording=true;
 		gadgetModule.distance.innerHTML='0.00';
 		gadgetModule.speed.innerHTML='0.00';
-		Trail.mover.setPositionXY(this.data[0][0], this.data[0][1]);		
+		this.recordedData.length=0;
+		Trail.positioning(globalSettings.containerPointToLatLng(Trail.getX(0), Trail.getY(0)));
 		this.counter=0;
 		this.speedData.length=0;
 		this.heightData.length=0;
@@ -1334,35 +1313,38 @@ var drawer={
 		var relY=globalSettings.Height/2;
 		var preData=[];
 		var pt=Number(0.0);
-		var Lat=this.offSetY+Conversion.kmToDDNorth((relY-this.dataR[0][1])*scFacInv);
+		//var Lat=this.offSetY+Conversion.kmToDDNorth((relY-this.dataR[0][1])*scFacInv);
+		var Lat=this.offSetY+Conversion.kmToDDNorth(this.dataR[0][1]*0.001);
 		if(this.toECEF){
-			preData.push([pt.toFixed(1), Conversion.toECEF(Lat, this.offSetX+Conversion.kmToDDEast(Lat, (this.dataR[0][0]-relX)*scFacInv), this.offSetZ)]);
+			preData.push([pt.toFixed(1), Conversion.toECEF(Lat, this.offSetX+Conversion.kmToDDEast(Lat, this.dataR[0][0]*0.001), this.offSetZ)]);
 		}
 		else{
-			preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, (this.dataR[0][0]-relX)*scFacInv)]);
+			preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, this.dataR[0][0]*0.001)]);
 		}
 		pt+=0.1;
 
 		for(var i=1; i<this.dataR.length; i++){				
 			rawDistance=this.segmentLength(this.dataR[i], this.dataR[i-1]);
-			t=wr*rawDistance/this.speedData[i-1];
+			t=ks*rawDistance/this.speedData[i-1];
 			cos=(this.dataR[i][0]-this.dataR[i-1][0])/rawDistance;
 			sin=(this.dataR[i][1]-this.dataR[i-1][1])/rawDistance;
 			dx=tz*cos*this.speedData[i-1]*sk;
 			dy=tz*sin*this.speedData[i-1]*sk;
 			j=1;
-			cx=this.dataR[i-1][0]*scFacInv;
-			cy=this.dataR[i-1][1]*scFacInv;
+			cx=this.dataR[i-1][0];
+			cy=this.dataR[i-1][1];
 			while(t-tz>=0){
 				cx+=dx;
 				cy+=dy;
-				Lat=this.offSetY+Conversion.kmToDDNorth(relY*scFacInv-cy);
+				//Lat=this.offSetY+Conversion.kmToDDNorth(relY*scFacInv-cy);
+				Lat=this.offSetY+Conversion.kmToDDNorth(cy*0.001);
 				if(this.toECEF){
-					preData.push([pt.toFixed(1), Conversion.toECEF(Lat,this.offSetX+Conversion.kmToDDEast(Lat, cx-relX*scFacInv), this.offSetZ)]);
+					//preData.push([pt.toFixed(1), Conversion.toECEF(Lat,this.offSetX+Conversion.kmToDDEast(Lat, cx-relX*scFacInv), this.offSetZ)]);
+					preData.push([pt.toFixed(1), Conversion.toECEF(Lat,this.offSetX+Conversion.kmToDDEast(Lat, cx*0.001), this.offSetZ)]);
 				}
 				else{
-					//console.log('x: '+cx+' y: '+cy+' t: '+t.toFixed(5)+' tz:'+tz);
-					preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, cx-relX*scFacInv)]);
+					//preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, cx-relX*scFacInv)]);
+					preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, cx*0.001)]);
 				}
 				pt+=0.1;
 				j++;
