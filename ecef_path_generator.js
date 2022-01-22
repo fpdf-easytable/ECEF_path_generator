@@ -127,6 +127,11 @@ var mkVect2D=(function(){
 			}
 			return ang;
 		},//*/
+		
+		copyTo(otherVect){
+			otherVect.x=this.x;
+			otherVect.y=this.y;
+		},
 		print:function(){
 			return '('+this.x+', '+this.y+')';
 		},
@@ -170,11 +175,13 @@ var mkVect3D=(function(){
 		normalise:function(){
 			this.multiply(1.0/this.length());
 		},
-		distance:function(v, y, z){
-			if(typeof v === "object"){
-				return distance3DPoints(this.x, this.y, this.z, v.x, v.y, v.z);
-			}
-			return distance3DPoints(this.x, this.y, this.z, v, y, z);
+		distance:function(otherVect){
+			return distance3DPoints(this.x, this.y, this.z, otherVect.x, otherVect.y, otherVect.z);
+		},
+		copyTo(otherVect){
+			otherVect.x=this.x;
+			otherVect.y=this.y;
+			otherVect.z=this.z;
 		},
 		print:function(){
 			return '('+this.x+', '+this.y+', '+this.z+')';
@@ -304,11 +311,11 @@ var map = L.map('map',{
 		getScaleFactor:function(){
 			return this.scaleFactor
 		},
-		setScaleFactor:function(delta){
+		/*setScaleFactor:function(delta){
 			this.scaleFactor=Math.pow(2, (Number(delta)))*baseFactor;
-		},
+		},//*/
 		gridSettings:{stroke: "#2929a3",'stroke-width':0.2, opacity: 0.6},
-		paper:Raphael("canvas", canvasWidth,canvasHeight),
+		paper:Raphael("canvas", canvasWidth, canvasHeight),
 
 		wMtPx:0,
 		hMtPx:0,
@@ -684,7 +691,7 @@ var mkPOI=(function(){
 			this.lng=latLng.lng;
 		},
 
-		setPositionFromMts:function(mtX, mtY){
+		/*setPositionFromMts:function(mtX, mtY){
 			var vct=globalSettings.mtsCoordinatesToPxs(mtX, mtY);			
 
 			this.position3D.setPositionAt(vct.x, vct.y, this.position3D.z);
@@ -692,7 +699,7 @@ var mkPOI=(function(){
 			this.POI.toFront();
 			this.pointToLatLng(this.position3D.x, this.position3D.y);
 			this.geoPosition2D.setPositionAt(mtX, mtY);
-		},
+		},//*/
 
 		setPositionXYZ:function(x, y, z){
 			this.setPositionXY(x, y);
@@ -781,10 +788,15 @@ var mkPOI=(function(){
 			Conversion.toECEF(this.lat, this.lng, this.position3D.z);
 		},
 		
-		distanceTo:function(poi){
-			return this.geoPosition2D.distance(poi.geoPosition2D);
+		mtDistanceTo:function(poi){
+			console.log(this.geoPosition3D.print()+' ::: '+poi.geoPosition3D.print());
+			return this.geoPosition3D.distance(poi.geoPosition3D);
 		},
-		
+
+		pxDistanceTo:function(poi){
+			return this.position3D.distance(poi.position3D);
+		},
+
 		remove:function(){
 			this.POI.remove();
 		},
@@ -858,62 +870,29 @@ var mkPOI=(function(){
 			this.mover.attr({transform: 't0,0'});
 		},
 
-		positioning:function(latLng){
-			var pos=globalSettings.latLngToPixelCoordinates(latLng);
-			this.mover.attr({transform: 't'+pos.x+','+pos.y});
-			this.mover.toFront();
-		},
-
-		movingTo:function(latLng, ft){
-			var pos=globalSettings.latLngToPixelCoordinates(latLng);
-			this.mover.animate({transform: 't'+pos.x+','+pos.y}, ft, "linear");
-			this.mover.toFront();
-		},
-
 		addPoint:function(x, y){
 			this.set.push(mkPOI(x, y, 0, {stroke:'none', fill: "#ffb366"}));
 			if(this.set.length>1){
-				var i=this.set.length-2;
-				this.directions.push(mkVect2D(x-this.getX(i), -1*(y-this.getY)));
+				var i=this.set.length-1;
+				this.directions.push(mkVect2D(this.getGeoX(i)-this.getGeoX(i-1), (this.getGeoY(i-1)-this.getGeoY(i))));
+				i=this.directions.length-1;
 				this.directions[i].normalise();
 			}
 		},
-		distanceToNext:function(i){
-			if(i<this.set.length-1){
-				return this.set[i].distance(this.set[i+1]);
+
+		chunkPxLength:function(idx){
+			if(idx<this.set.length-1){
+				return this.set[idx].pxDistanceTo(this.set[idx+1]);
 			}
-			throw "something wrong!";
-		},
-		currentSegment:0,
-		currentSegmentLength:0,
-		currentLength:0,
-		idx:0,
-		currentPosition:mkVect3D(0,0,0),
-		moveToStart:function(){
-			this.currentPosition.setPositionAt(this.getX(0), this.getY(0), this.getZ(0));
-			this.currentLength=0;
-			this.idx=0;
-			this.currentSegmentLength=this.distanceToNext(0);
+			throw "something wrong in chunkPxLength";
 		},
 
-		movingDelta:function(delta, ft){
-			if(this.currentSegmentLength>0){
-				var t=delta;
-				if(this.currentSegmentLength>deltaFactor){
-					this.currentSegmentLength-=deltaFactor;
-				}
-				else{
-					t=this.currentSegmentLength;
-					deltaFactor-=t;
-				}
-				this.currentPosition.setPositionAt(t*this.directions[idx].x, t*this.directions[idx].y, 0)		
+		segmentMtLength:function(idx){
+			if(idx<this.set.length-1){
+				return distance2DPoints(this.getGeoX(idx), this.getGeoY(idx), this.getGeoX(idx+1), this.getGeoY(idx+1));			
+				//return this.set[idx].mtDistanceTo(this.set[idx+1]);
 			}
-			else{
-				if(this.idx<this.set.length-1){
-					this.idx++;
-					return true;
-				}
-			}
+			throw "something wrong in chunkMtLength";
 		},
 
 		getX:function(index){
@@ -932,9 +911,106 @@ var mkPOI=(function(){
 			return this.set[index].getGeoY();
 		},
 
-		movePointer:function(){
-			
+		getLastGeoX:function(){
+			return this.set[this.set.length-1].getGeoX();
 		},
+
+		getLastGeoY:function(){
+			return this.set[this.set.length-1].getGeoY();
+		},
+
+		currentDirection:0,
+		currentGeoPos:mkVect2D(0, 0),
+		currentMPos:mkVect2D(0, 0),
+		currentPosition:0,
+
+		moveToStart:function(){
+			if(this.set.length>0){
+				this.currentPosition=0;
+				this.mover.attr({transform: 't'+this.set[0].position3D.x+','+this.set[0].position3D.y});
+				this.mover.toFront();
+				this.currentGeoPos.setPositionAt(this.getGeoX(0),this.getGeoY(0));
+				this.currentMPos.setPositionAt(this.set[0].position3D.x, this.set[0].position3D.y);
+				this.segmentNum=0;
+			}
+		},
+
+		moveToNext:function(time){
+			this.currentMPos.add(this.delta);
+			this.mover.animate({transform: 't'+this.currentMPos.x+','+this.currentMPos.y}, time, "linear");
+			this.mover.toFront();			
+		},
+
+		segmentNum:0,
+		distanceMt:0,
+		delta:mkVect2D(0, 0),
+		deltaGeo:mkVect2D(0, 0),
+		currentChunkL:0,
+		msH:1/3600000,//conversion factor from k/h to k/ms
+		sH:1/3600, // conversion from k/h to k/sec
+
+		getDelta:function(speed, speedTime){
+			if(this.segmentNum+1==this.set.length){
+				return {time:-1};
+			}
+			if(this.distanceMt<=0){			
+				this.distanceMt=this.segmentMtLength(this.segmentNum);
+				//console.log('segmentNum: '+this.segmentNum+' L as kms: '+ 0.001*this.distanceMt+' :: '+globalSettings.mtsToPxs(this.distanceMt)+' as pxs: '+this.chunkPxLength(this.segmentNum));				
+			}
+			//v=d/t
+			//d=v*t
+			const timeThreshold=400;
+			const timeStep=300;
+			var vkms=speed*this.msH;
+			var tms=(0.001*this.distanceMt)/vkms;
+			var dk=0;
+			var a=false;
+			
+			if(tms>timeThreshold){
+				tms=timeStep;
+			}
+			else{
+				a=true;
+			}
+
+			dk=vkms*tms;
+
+			this.distanceMt-=1000*dk;
+
+			//console.log('dk: '+dk+' dpx: '+globalSettings.mtsToPxs(1000*dk)+' time: ' +tms+' speed k/ms: '+vkms);
+
+			this.directions[this.segmentNum].copyTo(this.delta);
+			this.delta.multiply(globalSettings.mtsToPxs(1000*dk));
+			this.moveToNext(tms, speedTime);
+
+			//################
+			this.directions[this.segmentNum].copyTo(this.deltaGeo);
+			this.deltaGeo.multiply(1000*dk);
+			this.deltaGeo.y*=-1;
+			this.currentGeoPos.add(this.deltaGeo);
+			//############
+
+
+			if(a){
+				this.distanceMt=0;
+				this.segmentNum++;
+			}
+			return {delta:this.delta, time:tms, distance:dk, geoX:this.currentGeoPos.x, geoY:this.currentGeoPos.y};
+		},
+
+
+		positioning:function(latLng){
+			var pos=globalSettings.latLngToPixelCoordinates(latLng);
+			this.mover.attr({transform: 't'+pos.x+','+pos.y});
+			this.mover.toFront();
+		},
+
+		movingTo:function(latLng, ft){
+			var pos=globalSettings.latLngToPixelCoordinates(latLng);
+			this.mover.animate({transform: 't'+pos.x+','+pos.y}, ft, "linear");
+			this.mover.toFront();
+		},
+
 	};
 
 	return Trail;
@@ -1081,7 +1157,7 @@ var drawer={
 			this.paused=false;
 			this.run();
 		}
-		
+
 		if(this.isRunning){
 			return;
 		}
@@ -1135,6 +1211,7 @@ var drawer={
 				}
 			}
 			else{
+				
 				controlModule.fire('readyToPlay');
 				this.isRunning=false;
 			}
@@ -1148,98 +1225,56 @@ var drawer={
 		this.recordedData.push(globalSettings.containerPointToLatLng(x, y));
 	},
 	dataR:[],
+	chunkLength:function(posA, posB){
+		return distance2DPoints(posA[0], posA[1], posB[0], posB[1]);
+	},
 
 	record:(function(){
-		const msH=1/3600000;
-		var residuo, d, time, p=0, r;
-		var counterR=0;
+		var a=true;
+		var speed=-1;
+		var lastGeoPos={};
 		return function(){
 			if(this.head==0){				
 				controlModule.fire('reset');
 				return;
 			}
 			if(this.resetRecording){
-				p=0;
-				residuo=0;
 				this.resetRecording=false;
 				this.dataR.length=0;
-				//this.dataR.push([Trail.getX(0), Trail.getY(0)]);
 				this.dataR.push([Trail.getGeoX(0), Trail.getGeoY(0)]);
-				this.recordedData.length=0;
-				this.addRecordedData(Trail.getX(0), Trail.getY(0));
-
-				counterR=1;
-				Trail.positioning(this.recordedData[0]);
-				this.counter=0;
+				this.speedData.push(this.speed);
+				Trail.moveToStart();
 				this.status=1;
 				gadgetModule.startTimer();
 			}
 
-			if(p>0 || this.counter<this.head-1){
-				this.speedData[counterR-1]=this.speed;
-				r=this.speedTime*(this.speed*this.scaleFactor)*msH;
-				
-				if(r>0){
-					if(p==0){
-						p=1;
-						this.counter++;
-						//this.dataR.push([Trail.getX(this.counter), Trail.getY(this.counter)]);
-						this.dataR.push([Trail.getGeoX(this.counter), Trail.getGeoY(this.counter)]);
-						this.addRecordedData(Trail.getX(this.counter), Trail.getY(this.counter));
+			if(a){
+				this.speedData.push(this.speed);
+				dt=Trail.getDelta(this.speed, this.speedTime);
 
-						d=distance2DPoints(Trail.getX(this.counter),  Trail.getY(this.counter), Trail.getX(this.counter-1),  Trail.getY(this.counter-1));
-						time=d/r;
-						
-						if(time>400){							
-							//this.dataR.pop();
-							this.recordedData.pop();
-							p=Math.ceil(time/250);
-
-							var f=1;
-							if(Trail.getX(this.counter)-Trail.getX(this.counter-1)<0){
-								f=-1;
-							}
-							var g=1;
-							if(Trail.getY(this.counter)-Trail.getY(this.counter-1)<0){
-								g=-1;
-							}
-							var tx=Math.abs(Trail.getX(this.counter)-Trail.getX(this.counter-1))/p;
-							var ty=Math.abs(Trail.getY(this.counter)-Trail.getY(this.counter-1))/p;
-						
-							for(var j=1; j<p; j++){
-								this.dataR.push([this.data[this.counter-1][0]+j*tx*f, this.data[this.counter-1][1]+j*ty*g]);
-								this.addRecordedData(this.data[this.counter-1][0]+j*tx*f, this.data[this.counter-1][1]+j*ty*g);
-							}
-							//this.dataR.push([this.data[this.counter][0], this.data[this.counter][1]]);
-							//this.addRecordedData(this.data[this.counter][0], this.data[this.counter][1]);
-							this.addRecordedData(Trail.getX(this.counter), Trail.getY(this.counter));
-						}
-					}
+				this.dataR.push([dt.geoX, dt.geoY]);
+				this.speedData.push(this.speed);
 					
-					d=Math.sqrt(Math.pow(this.dataR[counterR][0]-this.dataR[counterR-1][0], 2)+Math.pow(this.dataR[counterR][1]-this.dataR[counterR-1][1], 2));					
-					this.squareData.push(d);
-					residuo+=(d/r);
-					time=Math.round(residuo);
-					residuo-=time;
+				a=dt.time>=0;
 
-					Trail.movingTo(this.recordedData[counterR], time);
-
+				if(dt.time>0){				
 					setTimeout(function(){
-						gadgetModule.timer(time);
+						gadgetModule.timer(dt.time);
 						this.record();	
-					}.bind(this), time);					
-					counterR++;
-					p--;					
-					this.wkDistance+=d/drawer.scaleFactor;
+					}.bind(this), dt.time/this.speedTime);
+	
+					this.wkDistance+=dt.distance;
 					gadgetModule.distance.innerHTML=roundNumber(this.wkDistance,2);
 				}
 			}
 			else{
+				this.dataR.push([Trail.getLastGeoX(), Trail.getLastGeoY()]);
+				this.speedData.push(this.speed);
 				controlModule.fire('recordingFinished');
 			}
 		}
 	}()),
-	
+
 	erase:function(){
 		this.data.length=0;
 		this.dataR.length=0;
@@ -1284,6 +1319,7 @@ var drawer={
 	segmentLength:function(nespeedTime, prev){
 		return Math.sqrt(Math.pow(nespeedTime[0]-prev[0], 2)+Math.pow(nespeedTime[1]-prev[1], 2));
 	},
+	
 	changeFrequency:function(newFrequency){
 		this.frequency=newFrequency;
 	},
@@ -1313,7 +1349,6 @@ var drawer={
 		var relY=globalSettings.Height/2;
 		var preData=[];
 		var pt=Number(0.0);
-		//var Lat=this.offSetY+Conversion.kmToDDNorth((relY-this.dataR[0][1])*scFacInv);
 		var Lat=this.offSetY+Conversion.kmToDDNorth(this.dataR[0][1]*0.001);
 		if(this.toECEF){
 			preData.push([pt.toFixed(1), Conversion.toECEF(Lat, this.offSetX+Conversion.kmToDDEast(Lat, this.dataR[0][0]*0.001), this.offSetZ)]);
@@ -1336,14 +1371,11 @@ var drawer={
 			while(t-tz>=0){
 				cx+=dx;
 				cy+=dy;
-				//Lat=this.offSetY+Conversion.kmToDDNorth(relY*scFacInv-cy);
 				Lat=this.offSetY+Conversion.kmToDDNorth(cy*0.001);
 				if(this.toECEF){
-					//preData.push([pt.toFixed(1), Conversion.toECEF(Lat,this.offSetX+Conversion.kmToDDEast(Lat, cx-relX*scFacInv), this.offSetZ)]);
 					preData.push([pt.toFixed(1), Conversion.toECEF(Lat,this.offSetX+Conversion.kmToDDEast(Lat, cx*0.001), this.offSetZ)]);
 				}
 				else{
-					//preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, cx-relX*scFacInv)]);
 					preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, cx*0.001)]);
 				}
 				pt+=0.1;
