@@ -128,8 +128,8 @@ ul {
 }
 
 #gadgets li{
-margin-bottom: 25px;
-font-size:18px;
+margin-bottom: 15px;
+font-size:14px;
 text-align:right
 }
 
@@ -247,19 +247,23 @@ div.cntBotton:hover{
 
 
 #speed{
-	font-size:30px;
 	color:#0066cc;
 }
 
 #distance {
-	font-size:30px;
 	color:#00b300;
 }
 
-#Tdistance , #elapsedtime {
-	font-size:30px;
+#altitude{
+	color: #e8ef13; /*#1f14bc;//*/
 }
 
+#Tdistance , #elapsedtime {
+}
+
+.font1{
+	font-size: 25px;
+}
 
 
 input[type="file"] {

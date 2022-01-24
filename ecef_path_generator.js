@@ -100,34 +100,12 @@ var mkVect2D=(function(){
 			}
 			throw "test vector is zero";
 		},
-		/*isParallel:function(vect){
-			var t=this.cos(vect);
-			if(typeof t=="number"){
-				return Math.abs(t)==1;
-			}
-			throw "not a number";
-		},//*/
-		/*orthogonal:function(){
-			if(this.x!=0){
-				return mkVect2D(this.y, -1*this.x);
-			}
-			return mkVect2D(-1*this.y, 0); 
-		},//*/
 		rotate:function(ang){
 			var kx=this.x*Math.cos(ang)-this.y*Math.sin(ang);
 			var ky=this.y*Math.cos(ang)+this.x*Math.sin(ang);
 			this.x=kx;
 			this.y=ky;
-		},
-		/*angle:function(){
-			var cos=this.x/this.length();
-			var ang=Math.acos(cos);
-			if(this.y>0){
-				ang=2*Math.PI-ang;
-			}
-			return ang;
-		},//*/
-		
+		},		
 		copyTo(otherVect){
 			otherVect.x=this.x;
 			otherVect.y=this.y;
@@ -284,7 +262,6 @@ var map = L.map('map',{
 		zoomControl:false,
 });
 
-
 //####################################################################
 
 (function(){
@@ -296,6 +273,7 @@ var map = L.map('map',{
 	document.getElementById('canvasContainer').style.height=diff+'px';
 	document.getElementById('canvas').style.height=diff+'px';
 	document.getElementById('map').style.height=diff+'px';
+	document.getElementById('left_pannel').style.height=diff+'px';
 
 	var canvasWidth=document.getElementById('canvas').clientWidth;
 	var canvasHeight=diff;
@@ -311,9 +289,7 @@ var map = L.map('map',{
 		getScaleFactor:function(){
 			return this.scaleFactor
 		},
-		/*setScaleFactor:function(delta){
-			this.scaleFactor=Math.pow(2, (Number(delta)))*baseFactor;
-		},//*/
+
 		gridSettings:{stroke: "#2929a3",'stroke-width':0.2, opacity: 0.6},
 		paper:Raphael("canvas", canvasWidth, canvasHeight),
 
@@ -451,8 +427,6 @@ var map = L.map('map',{
 				y=e.clientY;
 				if(x>lx && x<rx && y>ly && y<ry){
 					cbk(x-lx, y-ly);
-					//console.log(window.scrollY+' :: '+(y-ly));
-					//cbk(x-lx, y-ly+window.scrollY);
 				}
 			}
 
@@ -517,17 +491,59 @@ var mkObjectEvt=(function(){
 	controlModule.deleteButton=document.getElementById('delete');
 	controlModule.eraseButton=document.getElementById('erase');
 	controlModule.resetButton=document.getElementById('reset');
-	controlModule.slider = document.getElementById('speedRange');
-	controlModule.sliderR = document.getElementById('xRange');
-	controlModule.scaleRange = document.getElementById('scaleRange');
+//	controlModule.zoomLess=document.getElementById('zoom_less');
+//	controlModule.zoomMore=document.getElementById('zoom_more');
 
-	controlModule.setZoom=function(zoomVal){
-		map.setZoom(globalSettings.baseZ+Number(zoomVal));
-		this.scaleRange.value=zoomVal;
-	}
+
 
 	controlModule.init=function(){
 		document.getElementById('upload').addEventListener('change', readSingleFile);
+
+		var zoomVal=globalSettings.baseZ;
+		var zoomStep=0.25;
+		controlModule.setZoom=function(zoomLevel){
+			zoomVal=zoomStep*Math.floor(zoomLevel/zoomStep);
+			if(zoomVal<12){
+				zoomVal=globalSettings.baseZ;
+			}
+			map.setZoom(zoomVal);
+		};
+		document.getElementById('zoom_less').addEventListener('click', function(){
+			if(zoomVal-0.25>=11){
+				zoomVal-=0.25;
+				map.setZoom(zoomVal);
+			}
+		});
+		
+		document.getElementById('zoom_more').addEventListener('click', function(){
+			if(zoomVal+0.25<=17.0){
+				zoomVal+=0.25;
+				map.setZoom(zoomVal);
+			}
+		});
+
+		var xT=0;
+		controlModule.setSpeedTime=function(xt){
+			if(xt>=0 && xt<6){
+				xT=xt;
+				controlModule.fire('timeFactor', xT); 
+				document.getElementById('x_time').innerHTML='x'+Math.pow(2, xT);
+			}
+		};
+		document.getElementById('time_speed_less').addEventListener('click', function(){
+			if(xT>0){
+				xT--;
+				controlModule.setSpeedTime(xT);
+			}
+		});
+		
+		document.getElementById('time_speed_more').addEventListener('click', function(){
+			if(xT<4){
+				xT++;
+				controlModule.setSpeedTime(xT);
+			}
+		});
+		
 
 		this.playButton.addEventListener('click', function () {
 			controlModule.fire('play');
@@ -578,24 +594,43 @@ var mkObjectEvt=(function(){
 			controlModule.playButton.style.display='block';
 		});
 
-		this.slider.oninput = function() {
+		/*this.slider.oninput = function() {
 			controlModule.fire('speedRange', roundNumber(this.value,2));
-		}
+		}//*/
+	};
 
-		this.sliderR.oninput = function() {
-			controlModule.fire('timeFactor', this.value); 
-			document.getElementById('speedUp').innerHTML='x'+Math.pow(2,this.value);
+	controlModule.altitude=10;
+
+	controlModule.setAltitude=function(altitude){
+		controlModule.altitude=Math.abs(altitude);
+		controlModule.fire('altitudeChanged', controlModule.altitude);
+	};
+
+	controlModule.changeAltitude=function(code){ //z=90=down; x=88=up 
+		var altStep=5;
+		var maxAlt=1500;
+		if(code==40){// down key
+			if(controlModule.altitude>=altStep){
+				controlModule.altitude-=altStep;
+			}
+			else{
+				//this.altitude=0;
+			}
 		}
-		
-		this.scaleRange.oninput = function() {
-			map.setZoom(globalSettings.baseZ+Number(this.value));	
-			controlModule.fire('scaleChange', this.value); 
+		else if(code==38){// up key
+			if(controlModule.altitude<maxAlt-altStep){
+				controlModule.altitude+=altStep;
+			}
+			else{
+				controlModule.altitude=maxAlt;
+			}
 		}
+		controlModule.fire('altitudeChanged', controlModule.altitude);
 	};
 
 	controlModule.getSlidersInput=function(){
-		controlModule.slider.oninput();
-		controlModule.sliderR.oninput();
+		//controlModule.slider.oninput();
+		//controlModule.sliderR.oninput();
 	};
 	return controlModule;
 })();
@@ -610,9 +645,9 @@ var ZoomViewer = L.Control.extend({
 		container.style.background = 'rgba(255,255,255,0.5)';
 		container.style.tespeedTimeAlign = 'left';
 		map.on('zoomstart zoom zoomend', function(ev){
-			gauge.innerHTML = 'Zoom level: ' + map.getZoom();
-			controlModule.fire('scaleChange', map.getZoom()-globalSettings.baseZ);
-
+			var zp=map.getZoom();
+			gauge.innerHTML = 'Zoom level: ' + zp;
+			controlModule.fire('scaleChange', zp-globalSettings.baseZ);
 		})
 		container.appendChild(gauge);
 		return container;
@@ -630,6 +665,7 @@ var gadgetModule=(function(){
 	module.distance=document.getElementById('distance');
 	module.totalDistance=document.getElementById('Tdistance');
 	module.speed=document.getElementById('speed');
+	module.altitude=document.getElementById('altitude');
 	module.elapsedTime=document.getElementById('elapsedtime');
 	module.averageSpeed=document.getElementById('average_speed');
 
@@ -670,6 +706,14 @@ var gadgetModule=(function(){
 
 	module.stopTimer=function(){
 		module.active=false;
+	};
+	
+	module.updateAlt=function(h){
+		module.altitude.innerHTML=h;
+	};
+	
+	module.updateSpeed=function(s){
+		module.speed.innerHTML=s;
 	};
 
 	return module;	
@@ -943,46 +987,6 @@ var mkPOI=(function(){
 		delta:mkVect2D(0, 0),
 		deltaGeo:mkVect2D(0, 0),
 		currentChunkL:0,
-		/*msH:1/3600000,//conversion factor from k/h to k/ms
-		sH:1/3600, // conversion from k/h to k/sec
-		timeThreshold:400,
-		timeStep:300,
-
-		getDelta2:function(speed, speedTime){
-			if(this.segmentNum+1==this.set.length){
-				return {time:-1};
-			}
-			if(this.distanceMt<=0){			
-				this.distanceMt=this.segmentMtLength(this.segmentNum);
-			}
-
-			var vkms=speed*this.msH;
-			var tms=(0.001*this.distanceMt)/vkms;
-			var dk=0;
-			var a=false;
-			
-			if(tms>this.timeThreshold){
-				tms=this.timeStep;
-			}
-			else{
-				a=true;
-			}
-
-			dk=vkms*tms;
-
-			this.distanceMt-=1000*dk;
-
-			this.directions[this.segmentNum].copyTo(this.deltaGeo);
-			this.deltaGeo.multiply(1000*dk);
-			this.deltaGeo.y*=-1;
-			this.moveToNext(tms, speedTime);
-
-			if(a){
-				this.distanceMt=0;
-				this.segmentNum++;
-			}
-			return {time:tms, distance:dk, geoX:this.currentGeoPos.x, geoY:this.currentGeoPos.y};
-		},//*/
 
 		getDelta:(function(){
 			var msH=1/3600000;//conversion factor from k/h to k/ms
@@ -1008,6 +1012,9 @@ var mkPOI=(function(){
 				}
 				else{
 					a=true;
+					if(tms<1){
+						console.log('jump to next vertix');
+					}
 				}
 
 				dm=1000*vkms*tms;
@@ -1051,23 +1058,24 @@ var mkPOI=(function(){
 var drawer={
 	speedTime:2,
 	status:0,
+	offSetX:-1.63,
+	offSetY:53.2672,
+	altitude:10,
 	init:function(){
-		
 		globalSettings.getPosition(function(x,y){
 			drawer.getData(x,y);
 		});
 
 		controlModule.init();
 
-		controlModule.addHandler('speedRange', function(x){
-			drawer['speed']=x;
-			document.getElementById('speed').innerHTML=x;
-		});
+		this.setSpeed(50);
 
 		controlModule.addHandler('timeFactor', function(x){
 			drawer['speedTime']=Math.pow(2, x);
 			gadgetModule.changeTimeFactor(x);
 		});
+
+		controlModule.setSpeedTime(1);
 
 		controlModule.getSlidersInput();
 
@@ -1094,27 +1102,25 @@ var drawer={
 		});
 
 		controlModule.addHandler('scaleChange', function(x){			
-			if(true || drawer.isResizeble()){
-				globalSettings.mkGrid();
-				drawer.setScaleFactor(globalSettings.getScaleFactor());
-				Trail.onZoom();
-			}
-			else{
-				alert('In order to change the zoom the current path must be deleted')
-			}
-		});	
+			globalSettings.mkGrid();
+			drawer.setScaleFactor(globalSettings.getScaleFactor());
+			Trail.onZoom();
+		});
+	
+		controlModule.addHandler('altitudeChanged', function(alt){
+			drawer['altitude']=alt;
+			gadgetModule.updateAlt(alt);
+			
+		});
+
+		controlModule.setAltitude(10);
 	},
 	mxG:10,
 	scaleFactor:globalSettings.getScaleFactor(),//50, //1km=scaleFactor px: 
-	isResizeble:function(){
-		if(this.data.length==0){
-			return true;
-		}
-		return false;
-	},
+	//*
 	setScaleFactor:function(newScaleFactor){
 		this.scaleFactor=newScaleFactor;
-	},
+	},// */
 	speedData:[],
 	altData:[],
 	data:[],
@@ -1359,9 +1365,7 @@ var drawer={
 	},
 
 	frequency:10, //in Hz (The sampling rate of the user motion has to be 10Hz (for Pluto))
-	offSetX:-1.63,
-	offSetY:53.2672,
-	altitude:30,
+
 	toECEF:false,
 
 	processData:function(fileName){
@@ -1370,12 +1374,8 @@ var drawer={
 		const sk=1.0/ks;
 		var a=false;
 		var fps=1.0/this.frequency;
-		var wr=ks/this.scaleFactor;
 		var cos, sin, t, rawDistance, tz=fps;//1.0/this.frequency;
-		const scFacInv=1.0/this.scaleFactor;
 		var j, dx, dy, cx, cy;
-		var relX=globalSettings.Width/2;
-		var relY=globalSettings.Height/2;
 		var preData=[];
 		var pt=Number(0.0);
 		var Lat=this.offSetY+Conversion.kmToDDNorth(this.dataR[0][1]*0.001);
@@ -1465,7 +1465,49 @@ var drawer={
 		this.totalDistance+=d;
 		gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
 		controlModule.fire('recordingFinished');
-	}
+	},
+
+	
+	speedStep:0.5,
+	maxSpeed:350,
+	changeSpeed:function(code){
+		if(code==90 || code==88){
+			var a=1;
+			if(code==90){
+				a=-1;
+			}
+			this.speedStep+=a*5;
+			if(this.speedStep<=0){
+				this.speedStep=0.5;
+			}
+			else if(this.speedStep>=10){
+				this.speedStep=5;
+			}
+			return;
+		}
+		if(code==37){
+			if(this.speed>=this.speedStep){
+				this.speed-=this.speedStep;
+			}
+			else{
+				this.speed=0;
+			}
+		}
+		else if(code==39){
+			if(this.speed<=this.maxSpeed-this.speedStep){
+				this.speed+=this.speedStep;
+			}
+			else{
+				this.speed=this.maxSpeed;
+			}
+		}
+		document.getElementById('speed').innerHTML=roundNumber(this.speed, 2);
+	},
+
+	setSpeed:function(speed){
+		this.speed=Math.abs(speed);
+		document.getElementById('speed').innerHTML=roundNumber(this.speed, 2);
+	},
 };
 
 //####################################################################
@@ -1486,13 +1528,34 @@ function download(filename, tespeedTime) {
 
 drawer.init();	
 
-controlModule.setZoom(-0.50);
+Trail.init();
 
-setTimeout(function(){
-	Trail.init();
-},500);
+controlModule.setZoom(13.50);
 
 //####################################################################
+
+window.addEventListener("keydown", function(event){
+	if(event.keyCode==38 || event.keyCode==40){//up=38; down=40 
+		controlModule.changeAltitude(event.keyCode);
+	}
+	else if(event.keyCode==37 || event.keyCode==39){//slow=37; fast=39 {
+		drawer.changeSpeed(event.keyCode);
+	}
+	else if(event.keyCode==88 || event.keyCode==90){
+		drawer.changeSpeed(event.keyCode);
+	}
+	else {
+		//console.log('you pressed: '+event.keyCode);
+	}
+});
+
+document.onkeydown = function(evt) {
+    evt = evt || window.event;
+    var keyCode = evt.keyCode;
+    if (keyCode >= 37 && keyCode <= 40) {
+        return false;
+    }
+};
 
 window.addEventListener("DOMContentLoaded", function(){
 	window.scrollTo(0, 0);
@@ -1619,7 +1682,7 @@ window.addEventListener("DOMContentLoaded", function(){
 		document.getElementById('locationButton').addEventListener('click', function () {
 			var latitude=Number(document.getElementById('latitude').value);
 			var longitude=Number(document.getElementById('longitude').value);
-			var altitude=Number(document.getElementById('altitude').value);
+			//var altitude=Number(document.getElementById('altitude').value);
 					
 			if(Number.isNaN(latitude) || Number.isNaN(longitude) || Number.isNaN(altitude)){
 				alert('Please enter a valid number.');
@@ -1627,9 +1690,11 @@ window.addEventListener("DOMContentLoaded", function(){
 			}
 			document.cookie='longitude='+longitude;
 			document.cookie='latitude='+latitude;
-			document.cookie='altitude='+altitude;
-			drawer.setCoordinates(longitude, latitude, altitude);
+			//document.cookie='altitude='+altitude;
+			drawer.setCoordinates(longitude, latitude);
 			map.setView([latitude, longitude], 14.25);
+			controlModule.setZoom(-0.50);
+
 		});
 		
 		if(document.cookie==''){

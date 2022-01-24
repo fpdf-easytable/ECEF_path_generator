@@ -70,10 +70,7 @@
 						</tr>
 						<tr>
 							<td class="tleft">Longitude:</td>
-							<td><input type="text" id="longitude" maxlength="10" size="10" value="-1.63"></td></tr>
-						<tr>
-							<td class="tleft">Altitude:</td>
-							<td><input type="text" id="altitude" maxlength="10" size="10" value="30"></td>
+							<td><input type="text" id="longitude" maxlength="10" size="10" value="-1.63"></td>
 						</tr>
 						<tr>
 							<td colspan="2" style="text-align:right;">
@@ -82,10 +79,10 @@
 						</tr>
 					</table>
 				</fieldset>
-				<fieldset>
+				<!-- fieldset>
 					<legend>Zoom:</legend>
 					<input type="range" min="-2.25" max="2.0" value="0" step="0.25" class="slider" id="scaleRange">
-				</fieldset>
+				</fieldset -->
 
 				<fieldset>
 					<legend>Colour:</legend>
@@ -171,29 +168,59 @@
 
 <div class="row">
 	<div class="col-2 col-s-2 rightBlock">
+		<div id="left_pannel" style="overflow-x: hidden;overflow-y: auto; padding-right: 10px;">
 		<ul id="gadgets">
-			<li style="">
+			<li>
 				<div>Speed</div>
-				<div id="speed" style="display:inline;">0.00</div>
+				<div class="font1" id="speed" style="display:inline;">0.00</div>
 				<div style="display:inline;">km/h</div>
 			</li>
 			<li>
 				<div>Total Distance</div>
-				<div id="Tdistance" style="display:inline;">0.00</div>
+				<div class="font1" id="Tdistance" style="display:inline;">0.00</div>
 				<div style="display:inline;">km</div>
 			</li>
 			<li>
 				<div>Distance</div>
-				<div id="distance" style="display:inline;">0.00</div>
+				<div class="font1" id="distance" style="display:inline;">0.00</div>
 				<div style="display:inline;">km</div>
 			</li>
 			<li>
+				<div>Altitude</div>
+				<div class="font1" id="altitude" style="display:inline;">0.00</div>
+				<div style="display:inline;">mt</div>
+			</li>
+			<li>
 				<div>Time</div>
-				<div id="elapsedtime" style="display:inline;">0.00</div>
+				<div class="font1" id="elapsedtime" style="display:inline;">0.00</div>
 				<div style="display:inline;">secs</div>
 			</li>
 		</ul>
 
+		<!-- ############################################ -->
+		<!-- ############################################ -->
+		<!-- ############################################ -->
+
+		<div style="display:table;padding:10px;">
+			<div style="display:table-row;padding:10px;">
+				<div style="font-size: 12px;">Zoom</div>
+				<input id="zoom_less" type="button" style="display:table-cell;margin-right: 1px;" value="-">
+				<input id="zoom_more" type="button" style="display:table-cell;margin-right: 10px;" value="+">
+			</div>
+			<!-- span>:</span -->
+			<div style="display:table-row;padding: 10px;">
+				<div style="margin-top:10px;">
+					<div style="font-size: 12px;">Time Elapsed</div>
+					<input id="time_speed_less" type="button" style="display:table-cell;margin-right: 1px;" value="-">
+					<div id="x_time" style="font-size:12px; display:inline;padding: 10px;">x1</div>
+					<input id="time_speed_more" type="button" style="display:table-cell;margin-right: 10px;" value="+">
+				</div>
+			</div>
+		</div>
+		<!-- ############################################ -->
+		<!-- ############################################ -->
+		<!-- ############################################ -->
+		
 		<ul class="menu">
 			<li>
 				<input checked="checked" name="tab1" id="tab1a" class="tabs" type="radio">
@@ -242,6 +269,7 @@
 			</li>
 		</ul>
  	</div>
+ 	</div>
 
 	<div id="container" class="col-s-10" style="padding:0px;">
 		<div id="canvasContainer">
@@ -249,26 +277,6 @@
 			<div id="map"></div>
 		</div>
 		<div id="speed-panel">
-			<div style="width:60%; display:inline-block; padding:0px 20px;">
-				<span>Speed:</span>
-				<div id="sbar">
-					<input type="range" min="1" max="240" value="50" step="0.05" class="slider" id="speedRange">
-				</div>
-				<div>
-					<div class="fLeft">0</div>	
-					<div class="fRight">240</div>	
-					<div class="clear"></div>	
-				</div>	
-			</div>
-			<div style="width:39%; display:inline-block">
-				<span>Time Elapsed:</span>
-				<div id="xbar">
-					<div class="fLeft">x1</div>
-					<input type="range" class="slider" id="xRange"min="0" max="7" value="6" step="1" style="width:85%;">
-					<span id="speedUp" style="float:right;"></span>
-					<div class="clear"></div>
-				</div>
-			</div>
 		</div>
 	</div>
 </div>
