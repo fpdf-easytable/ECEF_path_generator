@@ -484,17 +484,68 @@ var mkObjectEvt=(function(){
 
 (function(){
 	controlModule=mkObjectEvt();
-	controlModule.playButton=document.getElementById('player');
-	controlModule.pauseButton=document.getElementById('pause');
-	controlModule.recordButton=document.getElementById('record');
-	controlModule.recordingButton=document.getElementById('recording');
-	controlModule.deleteButton=document.getElementById('delete');
-	controlModule.eraseButton=document.getElementById('erase');
-	controlModule.resetButton=document.getElementById('reset');
-//	controlModule.zoomLess=document.getElementById('zoom_less');
-//	controlModule.zoomMore=document.getElementById('zoom_more');
+	controlModule.playButton=document.getElementById('playButton');
+	controlModule.pauseButton=document.getElementById('pauseButton');
+	controlModule.recordButton=document.getElementById('recordButton');
+	controlModule.recordingButton=document.getElementById('recordingButton');
+	controlModule.deleteButton=document.getElementById('deletButton');
+	controlModule.eraseButton=document.getElementById('eraseButton');
+	controlModule.resetButton=document.getElementById('resetButton');
+
+	var masks={'record':1, 'recording':2, 'play':3, 'pause':4};
+
+/*
+record recording play pause delete erase reset
+1         0       0    0      1     1      0   (64+4+2=70)// initial
+0         1       0    0      0     0      0   (32) // recording
+0         0       1    1      1     0      1   (16+8+4+1) // ready to play / pause
+
+0         0       0    0      0     0      0
+
+64       32      16    8      4     2      1
+ 
 
 
+
+	function displayButton(trueFalse){
+		if(trueFalse){
+			return 'block';
+		}
+		
+		return 'none';
+	}
+
+	controlModule.switching(msk) {
+		controlModule.recordButton.style.display=displayButton(msk &1==1);
+		controlModule.recordingButton.style.display=displayButton(msk &2==2);
+		controlModule.playButton.style.display=displayButton(msk &4==4);
+		controlModule.pauseButton.style.display=displayButton(msk &8==);
+		
+		controlModule.deleteButton.style.display=displayButton(msk &==);
+		controlModule.eraseButton.style.display=(msk &==);
+		controlModule.resetButton.style.display=(msk &==);
+	}
+//*/
+
+	controlModule.reset=function(){
+		controlModule.pauseButton.style.display='none';
+		controlModule.playButton.style.display='none';
+		controlModule.recordingButton.style.display='none';
+		this.recordButton.style.display='block';
+		
+		this.disableButtons(false);
+	};
+		
+	controlModule.disableButtons=function(enable){
+		controlModule.deleteButton.disabled = enable;
+		controlModule.eraseButton.disabled = enable;
+		controlModule.resetButton.disabled = enable;
+	};
+
+
+	controlModule.addHandler('reset', function(){
+		controlModule.reset();
+	});
 
 	controlModule.init=function(){
 		document.getElementById('upload').addEventListener('change', readSingleFile);
@@ -558,9 +609,11 @@ var mkObjectEvt=(function(){
 		});
 
 		this.recordButton.addEventListener('click', function () {
-			controlModule.fire('record');
+			
 			controlModule.recordButton.style.display='none';
 			controlModule.recordingButton.style.display='block';
+			controlModule.disableButtons(true);
+			controlModule.fire('record');
 		});
 
 		this.deleteButton.addEventListener('click', function () {
@@ -572,11 +625,7 @@ var mkObjectEvt=(function(){
 		});
 
 		this.resetButton.addEventListener('click', function () {
-			controlModule.fire('reset');
-			controlModule.pauseButton.style.display='none';
-			controlModule.playButton.style.display='none';
-			controlModule.recordingButton.style.display='none';
-			controlModule.recordButton.style.display='block';
+			controlModule.fire('reset');		
 		});
 
 		this.eraseButton.addEventListener('click', function () {
@@ -592,11 +641,9 @@ var mkObjectEvt=(function(){
 			controlModule.recordingButton.style.display='none';
 			controlModule.recordButton.style.display='none';
 			controlModule.playButton.style.display='block';
+			controlModule.disableButtons(false);
 		});
 
-		/*this.slider.oninput = function() {
-			controlModule.fire('speedRange', roundNumber(this.value,2));
-		}//*/
 	};
 
 	controlModule.altitude=10;
@@ -887,6 +934,8 @@ var mkPOI=(function(){
 			this.looping(function(shape){
 				shape.onZoom();
 			});
+			this.mover.attr(globalSettings.mtsCooPxs2(this.currentGeoPos.x, this.currentGeoPos.y));
+			this.mover.toFront();
 		},
 
 		reset:function(){
@@ -959,14 +1008,11 @@ var mkPOI=(function(){
 			return this.set[this.set.length-1].getGeoY();
 		},
 
-		currentDirection:0,
 		currentGeoPos:mkVect2D(0, 0),
 		currentMPos:mkVect2D(0, 0),
-		currentPosition:0,
 
 		moveToStart:function(){
 			if(this.set.length>0){
-				this.currentPosition=0;
 				this.mover.attr({transform: 't'+this.set[0].position3D.x+','+this.set[0].position3D.y});
 				this.mover.toFront();
 				this.currentGeoPos.setPositionAt(this.getGeoX(0),this.getGeoY(0));
@@ -1012,7 +1058,7 @@ var mkPOI=(function(){
 				}
 				else{
 					a=true;
-					if(tms<1){
+					if(tms<3){
 						console.log('jump to next vertix');
 					}
 				}
@@ -1044,7 +1090,6 @@ var mkPOI=(function(){
 			this.mover.animate({transform: 't'+pos.x+','+pos.y}, ft, "linear");
 			this.mover.toFront();
 		},
-
 	};
 
 	return Trail;
@@ -1225,7 +1270,7 @@ var drawer={
 			}
 
 			if(a){
-				gadgetModule.speed.innerHTML=this.speedData[idx];
+				gadgetModule.speed.innerHTML=roundNumber(this.speedData[idx], 2);
 				dt=Trail.getDelta(this.speedData[idx++], this.speedTime);
 
 				a=dt.time>=0;
@@ -1252,13 +1297,12 @@ var drawer={
 	}()),
 
 	resetRecording:true,
-	//squareData:[],
-	recordedData:[],
 	dataR:[],
 
 	record:(function(){
 		var a=true;
 		return function(){
+			console.log(this.head+'<<<');
 			if(this.head==0){				
 				controlModule.fire('reset');
 				return;
@@ -1329,14 +1373,12 @@ var drawer={
 		gadgetModule.resetTimer();
 		controlModule.getSlidersInput();
 	},
-	//heightData:[],
+
 	reset:function(){
 		this.dataR.length=0;
-		//this.squareData.length=0;
 		this.resetRecording=true;
 		gadgetModule.distance.innerHTML='0.00';
 		gadgetModule.speed.innerHTML='0.00';
-		this.recordedData.length=0;
 		Trail.moveToStart();
 		this.counter=0;
 		this.speedData.length=0;
@@ -1344,9 +1386,8 @@ var drawer={
 		this.wkDistance=0;
 		this.isRunning=false;
 		this.paused=false;
-		this.speed=1;
 		gadgetModule.resetTimer();
-		controlModule.getSlidersInput();
+		//controlModule.getSlidersInput();
 		gadgetModule.speed.innerHTML=this.speed;
 	},
 
@@ -1467,40 +1508,48 @@ var drawer={
 		controlModule.fire('recordingFinished');
 	},
 
-	
-	speedStep:0.5,
+	speedStep:0.5,	
+	speedStep5:5,
+	speedStep2:2,
+	speedStep1:1,
 	maxSpeed:350,
+		
 	changeSpeed:function(code){
-		if(code==90 || code==88){
-			var a=1;
-			if(code==90){
-				a=-1;
-			}
-			this.speedStep+=a*5;
-			if(this.speedStep<=0){
-				this.speedStep=0.5;
-			}
-			else if(this.speedStep>=10){
-				this.speedStep=5;
-			}
-			return;
+		var step=0.5;
+		if(code==81 || code==87){// q w
+			step=this.speedStep5;
 		}
-		if(code==37){
-			if(this.speed>=this.speedStep){
-				this.speed-=this.speedStep;
+		else if(code==65 || code==83){//a s
+			step=this.speedStep2;
+		}
+		else if(code==88 || code==90){ //z x
+			step=this.speedStep1;
+		}
+		else if(code==37 || code==39){
+			step=this.speedStep;
+		}
+		var a=1;
+		if(code==37 || code==81 || code==65 || code==88){
+			a=-1;
+		}
+		
+		if(a<0){
+			if(this.speed>=step){
+				this.speed-=step;
 			}
 			else{
 				this.speed=0;
 			}
 		}
-		else if(code==39){
-			if(this.speed<=this.maxSpeed-this.speedStep){
-				this.speed+=this.speedStep;
+		else{
+			if(this.speed<=this.maxSpeed-step){
+				this.speed+=step;
 			}
 			else{
 				this.speed=this.maxSpeed;
 			}
 		}
+		document.getElementById('speed_step').innerHTML=step+'km';
 		document.getElementById('speed').innerHTML=roundNumber(this.speed, 2);
 	},
 
@@ -1541,7 +1590,13 @@ window.addEventListener("keydown", function(event){
 	else if(event.keyCode==37 || event.keyCode==39){//slow=37; fast=39 {
 		drawer.changeSpeed(event.keyCode);
 	}
-	else if(event.keyCode==88 || event.keyCode==90){
+	else if(event.keyCode==81 || event.keyCode==87){// q w
+		drawer.changeSpeed(event.keyCode);
+	}
+	else if(event.keyCode==65 || event.keyCode==83){//a s
+		drawer.changeSpeed(event.keyCode);
+	}
+	else if(event.keyCode==88 || event.keyCode==90){ //z x
 		drawer.changeSpeed(event.keyCode);
 	}
 	else {

@@ -79,10 +79,6 @@
 						</tr>
 					</table>
 				</fieldset>
-				<!-- fieldset>
-					<legend>Zoom:</legend>
-					<input type="range" min="-2.25" max="2.0" value="0" step="0.25" class="slider" id="scaleRange">
-				</fieldset -->
 
 				<fieldset>
 					<legend>Colour:</legend>
@@ -198,76 +194,68 @@
 		</ul>
 
 		<!-- ############################################ -->
-		<!-- ############################################ -->
-		<!-- ############################################ -->
 
-		<div style="display:table;padding:10px;">
-			<div style="display:table-row;padding:10px;">
-				<div style="font-size: 12px;">Zoom</div>
-				<input id="zoom_less" type="button" style="display:table-cell;margin-right: 1px;" value="-">
-				<input id="zoom_more" type="button" style="display:table-cell;margin-right: 10px;" value="+">
+		<div style="display:table;padding:1px; dborder:1px solid; width:100%;">
+			<div style="display:table-row;">
+				<div style="margin-top:0px;">
+					<input id="recordButton" type="button" style="width:100%;" value="Record">
+					<input id="recordingButton" type="button" disabled="disable" style="width:100%;display:none;" value="Recording">
+					<input id="playButton" type="button" style="width:100%;display:none;" value="Play">
+					<input id="pauseButton" type="button" style="width:100%;display:none;margin-right: 3px;" value="Pause">
+				</div>
 			</div>
-			<!-- span>:</span -->
-			<div style="display:table-row;padding: 10px;">
-				<div style="margin-top:10px;">
-					<div style="font-size: 12px;">Time Elapsed</div>
-					<input id="time_speed_less" type="button" style="display:table-cell;margin-right: 1px;" value="-">
-					<div id="x_time" style="font-size:12px; display:inline;padding: 10px;">x1</div>
-					<input id="time_speed_more" type="button" style="display:table-cell;margin-right: 10px;" value="+">
+			<div style="display:table-row;">
+				<div style="margin-top:6px;">
+					<input id="resetButton" type="button" style="width:45%;display:table-cell;margin-right:3px;" value="Reset">
+					<input id="eraseButton" type="button" style="float:right;width:45%;display:table-cell;margin-right:3px;" value="Remove">
+				</div>
+			</div>
+
+			<div style="display:table-row;">
+				<div style="margin-top:6px;">
+					<input id="deletButton" type="button" style="float:right;display:table-cell;margin-right: 3px;" value="Delete">
+				</div>
+			</div>
+
+			<div style="display:table-row;">
+				<div style="display: inline-block;">
+					<div style="font-size: 12px;margin-top:6px;">Zoom</div>
+					<input id="zoom_less" type="button" style="margin-right: 5px;" value="-"/>
+					<input id="zoom_more" type="button" style="margin-right: 10px;" value="+"/>
+				</div>
+				<div style="display: inline-block;">
+					<div style="font-size: 12px;margin-top:6px;">Speed Step</div>
+					<div id="speed_step" style="font-size: 12px;margin-top:6px;text-align: center;">1km</div>
+				</div>
+				
+			</div>
+
+			<div style="display:table-row;">
+				<div style="font-size: 12px;margin-top:6px;">Time Elapsed</div>
+				<input id="time_speed_less" type="button" style="margin-right: 1px;" value="-"/>
+				<div id="x_time" style="font-size:12px; display:inline;padding: 10px;">x1</div>
+				<input id="time_speed_more" type="button" style="margin-right: 10px;" value="+"/>
+			</div>
+
+			<div style="display:table-row;">
+				<div style="margin-top:6px;">
+					<input id="export" type="button" style="width:100%;" value="Export to ECEF"/>
+					<input id="exportData" type="button" style="width:100%;margin-top: 5px;" value="Download data"/>
+					<input id="settings" type="button" style="width:100%;margin-top: 5px;" value="Settings"/>
+					<button style="width:100%;margin-top: 5px;">
+						<label for="upload">
+							<div >Import data</div>
+						</label>
+						<input id="upload" type="file"/>	
+					</button>
+					<input id="whatisit" type="button" style="width:100%;margin-top: 5px;" value="What is it?"/>
 				</div>
 			</div>
 		</div>
 		<!-- ############################################ -->
 		<!-- ############################################ -->
 		<!-- ############################################ -->
-		
-		<ul class="menu">
-			<li>
-				<input checked="checked" name="tab1" id="tab1a" class="tabs" type="radio">
-				<label for="tab1a" class="open" accesskey="2">
-					Recorder / Player
-				</label>
-				<input name="tab1" id="tab1ac" class="tabs close" type="radio">
-				<label for="tab1ac" class="close" accesskey="3">
-				</label>
-				<ul>
-					<li>
-						<div id="pause"  class="cntBotton" style="display:none;">Pause</div>
-						<div id="player" class="cntBotton" style="display:none;">Play</div>
-						<div id="recording" class="cntBotton" style="display:none;">Recording</div>
-						<div id="record" class="cntBotton">Record</div>
-					</li>
-					<li id="reset"><div class="cntBotton">Reset</div></li>
-					<li id="delete"><div class="cntBotton">Delete</div></li>
-					<li id="erase"><div class="cntBotton">Remove</div></li>
-				</ul>
-			</li>
-			<li>
-				<input name="tab1" id="tab1b" class="tabs" type="radio">
-				<label for="tab1b" class="open" accesskey="4">More Actions</label>
-				<input name="tab1" id="tab1bc" class="tabs close" type="radio">
-				<label for="tab1bc" class="close" accesskey="5"> </label>
-				<ul>
-					<li id="settings">
-						<div class="cntBotton">Settings</div>
-					</li>
-					<li id="export">
-						<div class="cntBotton">Export to ECEF</div>
-					</li>
-					<li id="exportData">
-						<div class="cntBotton">Download data</div>
-					</li>
-					<li>
-						<label for="upload">
-							<div class="cntBotton">	
-								Import data
-							</div>
-						</label><input id="upload" type="file"/>	
-					</li>
-					<li id="whatisit"><div class="cntBotton">What is it?</div></li>
-				</ul>
-			</li>
-		</ul>
+
  	</div>
  	</div>
 
