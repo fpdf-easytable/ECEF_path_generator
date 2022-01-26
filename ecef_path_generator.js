@@ -23,7 +23,7 @@ function readSingleFile(e) {
 	}
 
 	var reader = new FileReader();
-	reader.readAsTespeedTime(file, "UTF-8");
+	reader.readAsText(file, "UTF-8");
 	reader.onload = function(e) {
 		drawer.upload(e.target.result.toString());
 	};
@@ -34,13 +34,6 @@ function readSingleFile(e) {
 function distance2DPoints(x1, y1, x2, y2)
 {
 	return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2));
-}
-
-//####################################################################
-
-function distance3DPoints(x1, y1, z1, x2, y2, z2)
-{
-	return Math.sqrt(Math.pow(x1-x2, 2) + Math.pow(y1-y2, 2)+ Math.pow(z1-z2, 2));
 }
 
 //####################################################################
@@ -118,57 +111,6 @@ var mkVect2D=(function(){
 	return function(x, y){
 		var vect=Object.create(Vec2D);
 		vect.setPositionAt(x, y);
-		return vect;
-	}
-})();
-
-//##################################################################
-
-var mkVect3D=(function(){
-	var Vec3D={
-		x:0,
-		y:0,
-		z:0,
-		setPositionAt:function(x,y,z){
-			this.x=x;
-			this.y=y;
-			this.z=z;
-		},
-		add:function(vect){
-			this.x+=vect.x;
-			this.y+=vect.y;
-			this.z+=vect.z;
-		},
-		multiply:function(t){
-			this.x*=t;
-			this.y*=t;
-			this.z*=t;
-		},
-		length:function(){
-			return distance3DPoints(this.x, this.y, this.z, 0, 0, 0);
-		},
-		clone:function(){
-			return mkVect3D(this.x, this.y, this.z);
-		},
-		normalise:function(){
-			this.multiply(1.0/this.length());
-		},
-		distance:function(otherVect){
-			return distance3DPoints(this.x, this.y, this.z, otherVect.x, otherVect.y, otherVect.z);
-		},
-		copyTo(otherVect){
-			otherVect.x=this.x;
-			otherVect.y=this.y;
-			otherVect.z=this.z;
-		},
-		print:function(){
-			return '('+this.x+', '+this.y+', '+this.z+')';
-		},
-	};
-	
-	return function(x,y,z){
-		var vect=Object.create(Vec3D);
-		vect.setPositionAt(x, y, z);
 		return vect;
 	}
 })();
@@ -351,13 +293,7 @@ var map = L.map('map',{
 			return {'lat':lat, 'lng':lng};
  		},
 
-		/*pointToLatLng:function(x, y){
-			return map.c ontainerPointToLatLng(L.point(Math.round(x), Math.round(y)));
-			return map.latLngToContainerPoint(latLng);
-		},//*/
-
 		containerCenter:function(){
-			//return mkVect2D({x:0.5*this.Width, y:0.5*this.Height};
 			return mkVect2D(0.5*this.Width, 0.5*this.Height);
 		},
 
@@ -417,6 +353,7 @@ var map = L.map('map',{
 			var ly=this.canvas.getBoundingClientRect().top;
 			var rx=lx+this.Width;
 			var ry=ly+this.Height;
+
 			canvas.onmousedown=function(){
 				document.onmouseup = closeDrawElement;
 				document.onmousemove = elementDraw;
@@ -493,39 +430,6 @@ var mkObjectEvt=(function(){
 	controlModule.resetButton=document.getElementById('resetButton');
 
 	var masks={'record':1, 'recording':2, 'play':3, 'pause':4};
-
-/*
-record recording play pause delete erase reset
-1         0       0    0      1     1      0   (64+4+2=70)// initial
-0         1       0    0      0     0      0   (32) // recording
-0         0       1    1      1     0      1   (16+8+4+1) // ready to play / pause
-
-0         0       0    0      0     0      0
-
-64       32      16    8      4     2      1
- 
-
-
-
-	function displayButton(trueFalse){
-		if(trueFalse){
-			return 'block';
-		}
-		
-		return 'none';
-	}
-
-	controlModule.switching(msk) {
-		controlModule.recordButton.style.display=displayButton(msk &1==1);
-		controlModule.recordingButton.style.display=displayButton(msk &2==2);
-		controlModule.playButton.style.display=displayButton(msk &4==4);
-		controlModule.pauseButton.style.display=displayButton(msk &8==);
-		
-		controlModule.deleteButton.style.display=displayButton(msk &==);
-		controlModule.eraseButton.style.display=(msk &==);
-		controlModule.resetButton.style.display=(msk &==);
-	}
-//*/
 
 	controlModule.reset=function(){
 		controlModule.pauseButton.style.display='none';
@@ -675,10 +579,6 @@ record recording play pause delete erase reset
 		controlModule.fire('altitudeChanged', controlModule.altitude);
 	};
 
-	controlModule.getSlidersInput=function(){
-		//controlModule.slider.oninput();
-		//controlModule.sliderR.oninput();
-	};
 	return controlModule;
 })();
 
@@ -772,8 +672,6 @@ var gadgetModule=(function(){
 
 var mkPOI=(function(){
 	var objectPOI={
-		updateGeoPosition:false,
-		position3D:null,
 		geoPosition2D:null,// holds coordinates in meters from the center of the map
 		POI:null,
 		lat:'lat',
@@ -789,17 +687,10 @@ var mkPOI=(function(){
 			this.lng=latLng.lng;
 		},
 
-		setPositionXYZ:function(x, y, z){
-			this.setPositionXY(x, y);
-			this.position3D.z=z;
-		},
-
 		setPositionXY:function(x, y){
-			this.position3D.setPositionAt(x, y, this.position3D.z);
-			this.POI.attr({transform: 't'+this.position3D.x+','+this.position3D.y});
+			this.POI.attr({transform: 't'+x+','+y});
 			this.POI.toFront();
-			//console.log(this.position3D.print());
-			this.pointToLatLng(this.position3D.x, this.position3D.y);
+			this.pointToLatLng(x, y);
 			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
 		},
 		
@@ -807,7 +698,6 @@ var mkPOI=(function(){
 			this.lat=latLng.lat;
 			this.lng=latLng.lng;
 			var pos=globalSettings.latLngToPixelCoordinates(latLng);
-			this.position3D.setPositionAt(pos.x, pos.y, this.position3D.z);
 			this.POI.attr({transform: 't'+pos.x+','+pos.y});
 			this.POI.toFront();
 			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
@@ -815,48 +705,8 @@ var mkPOI=(function(){
 
 		onZoom:function(){
 			var pos=globalSettings.latLngToPixelCoordinates({'lat':this.lat, 'lng':this.lng});
-			this.position3D.setPositionAt(pos.x, pos.y, this.position3D.z);
 			this.POI.attr({transform: 't'+pos.x+','+pos.y});
 			this.POI.toFront();
-		},
-		
-		moveTo2:function(x, y, ft){
-			this.position3D.setPositionAt(x, y, this.position3D.z);
-			if(true || this.updateGeoPosition)
-			{
-				this.pointToLatLng(this.position3D.x, this.position3D.y);
-				this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
-			}
-
-			this.POI.animate({transform: 't'+(this.position3D.x)+','+(this.position3D.y)}, ft, "linear");
-			this.POI.toFront();
-		},
-
-		moveTo:function(spDelta, ft){
-			this.position3D.add(spDelta);
-			if(true || this.updateGeoPosition)
-			{
-				this.pointToLatLng(this.position3D.x, this.position3D.y);
-				this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
-			}
-
-			this.POI.animate({transform: 't'+(this.position3D.x)+','+(this.position3D.y)}, ft, "linear");
-			this.POI.toFront();
-		},
-		updatePositionZ:function(z){
-			this.position3D.z=z;
-		},
-
-		getX:function(){
-			return this.position3D.x;
-		},	
-
-		getY:function(){
-			return this.position3D.y;
-		},
-
-		getZ:function(){
-			return this.position3D.z;
 		},
 
 		getGeoX:function(){
@@ -867,34 +717,21 @@ var mkPOI=(function(){
 			return this.geoPosition2D.y;
 		},
 
-		getGeoZ:function(){
-			return globalSettings.pixelsToMts(this.position3D.z);
-		},
-
-		positionToECEF:function(){
-			this.pointToLatLng(this.position3D.x, this.position3D.y);
-			Conversion.toECEF(this.lat, this.lng, this.position3D.z);
-		},
-		
-		mtDistanceTo:function(poi){
-			console.log(this.geoPosition3D.print()+' ::: '+poi.geoPosition3D.print());
-			return this.geoPosition3D.distance(poi.geoPosition3D);
-		},
-
-		pxDistanceTo:function(poi){
-			return this.position3D.distance(poi.position3D);
+		positionToECEF:function(altitude){
+			Conversion.toECEF(this.lat, this.lng, altitude);
 		},
 
 		remove:function(){
 			this.POI.remove();
 		},
+
+		getLatLng:function(){
+			return {'lat':this.lat, 'lng':this.lng};
+		}
 	};
 
-	return function(x, y, z, attributes, radius){
+	return function(x, y, attributes, radius){
 		var module=Object.create(objectPOI);
-		module.position3D=mkVect3D(0, 0, 0);
-		module.geoPosition3D=mkVect3D(0, 0, 0);
-
 		var poiR=2;
 		var att={stroke:'none'};
 
@@ -909,12 +746,11 @@ var mkPOI=(function(){
 		module.POI=globalSettings.paper.circle(0, 0, poiR);
 		module.POI.attr(att);
 		module.POI.attr({transform: 't0,0'});
-		module.setPositionXYZ(x, y, z);
+		module.setPositionXY(x, y);
 
 		return module;
 	}
 })();
-
 
 //####################################################################
 //####################################################################
@@ -943,38 +779,56 @@ var mkPOI=(function(){
 				shape.remove();
 			});
 			this.set.length=0;
+			this.directions.length=0;
+			this.trailLength=0.0;
+			this.segmentNum=0;
+			this.distanceMt=0.0;
 		},
 
 		removeLast:function(){
 			if(this.set.length>0){
-				this.set[this.set.length-1].remove();
-				this.set.length--;		
+				var i=this.set.length-1;
+				if(i>0){
+					this.trailLength-=this.segmentMtLength(i-1);
+				}
+				this.set[i].remove();
+				this.set.pop();
 			}
 		},
 
+		trailLength:0.0,
 		mover:null,
 
 		init:function(){
 			this.mover=globalSettings.paper.circle(0, 0, 2);
 			this.mover.attr({stroke:'none', fill: "blue"});
-			this.mover.attr({transform: 't0,0'});
+			this.mover.attr({transform: 't-100,-100'});
 		},
 
 		addPoint:function(x, y){
-			this.set.push(mkPOI(x, y, 0, {stroke:'none', fill: "#ffb366"}));
+			this.set.push(mkPOI(x, y, {stroke:'none', fill: "#ffb366"}));
+			this.setUp();
+		},
+
+		addPointLatLng:function(latLng){			
+			this.set.push(mkPOI(0, 0, {stroke:'none', fill: "#ffb366"}));
+			var k=this.set.length-1;
+			this.set[k].setLatLng(latLng);
+			this.setUp();
+		},
+		
+		setUp:function(){
 			if(this.set.length>1){
 				var i=this.set.length-1;
 				this.directions.push(mkVect2D(this.getGeoX(i)-this.getGeoX(i-1), (this.getGeoY(i-1)-this.getGeoY(i))));
+				this.trailLength+=this.segmentMtLength(i-1);
 				i=this.directions.length-1;
 				this.directions[i].normalise();
 			}
 		},
 
-		chunkPxLength:function(idx){
-			if(idx<this.set.length-1){
-				return this.set[idx].pxDistanceTo(this.set[idx+1]);
-			}
-			throw "something wrong in chunkPxLength";
+		getTrailLengthKm:function(){
+			return this.trailLength*0.001;
 		},
 
 		segmentMtLength:function(idx){
@@ -982,14 +836,6 @@ var mkPOI=(function(){
 				return distance2DPoints(this.getGeoX(idx), this.getGeoY(idx), this.getGeoX(idx+1), this.getGeoY(idx+1));			
 			}
 			throw "something wrong in chunkMtLength";
-		},
-
-		getX:function(index){
-			return this.set[index].getX();
-		},
-
-		getY:function(index){
-			return this.set[index].getY();
 		},
 
 		getGeoX:function(index){
@@ -1009,15 +855,12 @@ var mkPOI=(function(){
 		},
 
 		currentGeoPos:mkVect2D(0, 0),
-		currentMPos:mkVect2D(0, 0),
 
 		moveToStart:function(){
 			if(this.set.length>0){
-				this.mover.attr({transform: 't'+this.set[0].position3D.x+','+this.set[0].position3D.y});
-				this.mover.toFront();
 				this.currentGeoPos.setPositionAt(this.getGeoX(0),this.getGeoY(0));
-
-				globalSettings.mtsCoordinatesToPxs(this.getGeoX(0),this.getGeoY(0)).copyTo(this.currentMPos);
+				this.mover.attr(globalSettings.mtsCooPxs2(this.currentGeoPos.x, this.currentGeoPos.y));
+				this.mover.toFront();				
 				this.segmentNum=0;
 			}
 		},
@@ -1030,9 +873,7 @@ var mkPOI=(function(){
 
 		segmentNum:0,
 		distanceMt:0,
-		delta:mkVect2D(0, 0),
 		deltaGeo:mkVect2D(0, 0),
-		currentChunkL:0,
 
 		getDelta:(function(){
 			var msH=1/3600000;//conversion factor from k/h to k/ms
@@ -1079,17 +920,14 @@ var mkPOI=(function(){
 			};
 		})(),
 
-		positioning:function(latLng){
-			var pos=globalSettings.latLngToPixelCoordinates(latLng);
-			this.mover.attr({transform: 't'+pos.x+','+pos.y});
-			this.mover.toFront();
+		exportData:function(){
+			var dataResult=[];
+			for(var i=0; i<this.set.length; i++){
+				dataResult.push(this.set[i].getLatLng());
+			}
+			return JSON.stringify(dataResult);
 		},
 
-		movingTo:function(latLng, ft){
-			var pos=globalSettings.latLngToPixelCoordinates(latLng);
-			this.mover.animate({transform: 't'+pos.x+','+pos.y}, ft, "linear");
-			this.mover.toFront();
-		},
 	};
 
 	return Trail;
@@ -1111,6 +949,8 @@ var drawer={
 			drawer.getData(x,y);
 		});
 
+		Trail.init();
+		
 		controlModule.init();
 
 		this.setSpeed(50);
@@ -1120,9 +960,7 @@ var drawer={
 			gadgetModule.changeTimeFactor(x);
 		});
 
-		controlModule.setSpeedTime(1);
-
-		controlModule.getSlidersInput();
+		controlModule.setSpeedTime(0);
 
 		controlModule.addHandler('play', function(){
 			drawer.play();
@@ -1130,6 +968,7 @@ var drawer={
 		controlModule.addHandler('record', function(){
 			drawer.record();
 		});
+
 		controlModule.addHandler('pause', function(){
 			drawer.halt();
 		});
@@ -1148,79 +987,72 @@ var drawer={
 
 		controlModule.addHandler('scaleChange', function(x){			
 			globalSettings.mkGrid();
-			drawer.setScaleFactor(globalSettings.getScaleFactor());
 			Trail.onZoom();
 		});
 	
 		controlModule.addHandler('altitudeChanged', function(alt){
 			drawer['altitude']=alt;
 			gadgetModule.updateAlt(alt);
-			
 		});
 
 		controlModule.setAltitude(10);
 	},
 	mxG:10,
-	scaleFactor:globalSettings.getScaleFactor(),//50, //1km=scaleFactor px: 
-	//*
-	setScaleFactor:function(newScaleFactor){
-		this.scaleFactor=newScaleFactor;
-	},// */
 	speedData:[],
 	altData:[],
-	data:[],
-	totalDistance:0,
+	lastX:0.0,
+	lastY:0.0,
 	getData:function(x, y){
 		if(this.status>0){
 			return;
 		}
 		var d=0;
 		if(this.head>0){
-			d=distance2DPoints(Trail.getX(this.head-1), Trail.getY(this.head-1), x, y);
+			var pxC=globalSettings.mtsCoordinatesToPxs(Trail.getGeoX(this.head-1), Trail.getGeoY(this.head-1));
+			this.lastX=pxC.x;
+			this.lastY=pxC.y;
+			d=distance2DPoints(this.lastX, this.lastY, x, y);
 		}
 
 		if(d>this.mxG){
 			var k=this.head-1;
 			var r=Math.ceil(d/this.mxG);
 			var f=1;
-			if(x-Trail.getX(k)<0){
+			if(x-this.lastX<0){
 				f=-1;
 			}
 			var g=1;
-			if(y-Trail.getY(k)<0){
+			if(y-this.lastY<0){
 				g=-1;
 			}
-			var tx=Math.abs(x-Trail.getX(k))/r;
-			var ty=Math.abs(y-Trail.getY(k))/r;
+
+			var tx=Math.abs(x-this.lastX)/r;
+			var ty=Math.abs(y-this.lastY)/r;
 			for(var j=1; j<r; j++){
-				this.data.push([Trail.getX(k)+j*tx*f, Trail.getY(k)+j*ty*g]);
-				Trail.addPoint(Trail.getX(k)+j*tx*f, Trail.getY(k)+j*ty*g);
+				Trail.addPoint(this.lastX+j*tx*f, this.lastY+j*ty*g);
 				this.head++;
 			}
+
 		}
 
 		if(d>this.mxG || this.head==0){
 			Trail.addPoint(x,y);
-			this.data.push([x, y]);
 			this.head++;
-
-			this.totalDistance+=d;
-			gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
+			gadgetModule.totalDistance.innerHTML=roundNumber(Trail.getTrailLengthKm(), 2);
 		}
 	},
 
 	deleteLast:function(){
-		if(this.status>0){
+		if(this.status>0 && this.head>1){
 			return;
 		}
-		Trail.removeLast();
-		
+
 		this.head--;
+		Trail.removeLast();
 		if(this.head>0){
-			this.totalDistance-=this.segmentLength(this.data[this.head], this.data[this.head-1]);
-			gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
+			gadgetModule.totalDistance.innerHTML=roundNumber(Trail.getTrailLengthKm(), 2);
 		}
-		this.data.pop();
+		
 	},
 	counter:0,
 	head:0,
@@ -1246,7 +1078,6 @@ var drawer={
 		this.wkDistance=0;
 		this.status=1;
 
-		controlModule.getSlidersInput();
 		gadgetModule.resetTimer();
 		gadgetModule.startTimer();
 
@@ -1271,6 +1102,7 @@ var drawer={
 
 			if(a){
 				gadgetModule.speed.innerHTML=roundNumber(this.speedData[idx], 2);
+				gadgetModule.updateAlt(this.altData[idx]);
 				dt=Trail.getDelta(this.speedData[idx++], this.speedTime);
 
 				a=dt.time>=0;
@@ -1302,7 +1134,6 @@ var drawer={
 	record:(function(){
 		var a=true;
 		return function(){
-			console.log(this.head+'<<<');
 			if(this.head==0){				
 				controlModule.fire('reset');
 				return;
@@ -1352,42 +1183,39 @@ var drawer={
 		}
 	}()),
 
-	erase:function(){
-		this.data.length=0;
+	clearData:function(){
 		this.dataR.length=0;
-		//this.squareData.length=0;
+		this.speedData.length=0;
+		this.altData.length=0;
+	},
+
+	erase:function(){
+		this.clearData();
 		this.resetRecording=true;
 		this.head=0;
-		this.totalDistance=0;
 		Trail.reset();
 		gadgetModule.totalDistance.innerHTML='0.00';
 		gadgetModule.distance.innerHTML='0.00';
 		gadgetModule.speed.innerHTML='0.00';
 		this.counter=0;
-		this.speedData.length=0;
-		this.altData.length=0;
 		this.wkDistance=0;
 		this.isRunning=false;
 		this.paused=false;
 		this.status=0;
 		gadgetModule.resetTimer();
-		controlModule.getSlidersInput();
 	},
 
 	reset:function(){
-		this.dataR.length=0;
+		this.clearData();
 		this.resetRecording=true;
 		gadgetModule.distance.innerHTML='0.00';
 		gadgetModule.speed.innerHTML='0.00';
 		Trail.moveToStart();
 		this.counter=0;
-		this.speedData.length=0;
-		this.altData.length=0;
 		this.wkDistance=0;
 		this.isRunning=false;
 		this.paused=false;
 		gadgetModule.resetTimer();
-		//controlModule.getSlidersInput();
 		gadgetModule.speed.innerHTML=this.speed;
 	},
 
@@ -1399,18 +1227,15 @@ var drawer={
 		this.frequency=newFrequency;
 	},
 
-	setCoordinates:function(centerLong, centerLat, centerAlt){
+	setCoordinates:function(centerLong, centerLat){
 		this.offSetX=Number(centerLong);
 		this.offSetY=Number(centerLat);
-		this.altitude=Number(centerAlt);
 	},
 
 	frequency:10, //in Hz (The sampling rate of the user motion has to be 10Hz (for Pluto))
-
 	toECEF:false,
 
-	processData:function(fileName){
-		
+	processData:function(fileName){		
 		const ks=3600; //sec per hr
 		const sk=1.0/ks;
 		var a=false;
@@ -1479,32 +1304,34 @@ var drawer={
 		}
 		download(fileName+".csv",result);
 	},
+
 	downloadData:function(fileName){
-		var result=JSON.stringify(this.data)+"\n";
+		var result=Trail.exportData()+"\n";
 		result+=JSON.stringify(this.dataR)+"\n";
-		//result+=JSON.stringify(this.squareData)+"\n";
 		result+=JSON.stringify(this.speedData)+"\n";
-		result+=JSON.stringify(this.altData);
-		download(fileName+".tspeedTime",result);
+		result+=JSON.stringify(this.altData)+"\n";
+		result+=JSON.stringify({'lat':this.offSetY, 'lng':this.offSetX});
+		download(fileName+".txt",result);
 	},
+
 	upload:function(fileContents){
 		this.erase();
 		var chunks=fileContents.split("\n");
-		this.data=JSON.parse(chunks[0].toString());
-		this.dataR=JSON.parse(chunks[1]);
-		//this.squareData=JSON.parse(chunks[2]);
-		this.speedData=JSON.parse(chunks[3]);
-		this.altData=JSON.parse(chunks[4]);
-		var d=0;
-		this.trail.set.push(globalSettings.paper.circle(this.data[0][0], this.data[0][1],2).attr(this.trialSettings));
-		this.head=1;
-		for(var i=1; i<this.data.length; i++){
-			d+=this.segmentLength(this.data[i], this.data[i-1]);
-			this.trail.set.push(globalSettings.paper.circle(this.data[i][0], this.data[i][1],2).attr(this.trialSettings));
+		var dataLatLng=JSON.parse(chunks[0].toString());
+		this.head=0;
+		for(var i=0; i<dataLatLng.length; i++){
+			Trail.addPointLatLng(dataLatLng[i]);
 			this.head++;
-		}		
-		this.totalDistance+=d;
-		gadgetModule.totalDistance.innerHTML=roundNumber(this.totalDistance/this.scaleFactor, 2);
+		}
+
+		this.dataR=JSON.parse(chunks[1]);
+		this.speedData=JSON.parse(chunks[2]);
+		this.altData=JSON.parse(chunks[3]);
+		
+		map.setView(JSON.parse(chunks[4]), 13.50);		
+
+		gadgetModule.totalDistance.innerHTML=roundNumber(Trail.getTrailLengthKm(), 2);
+		Trail.moveToStart();
 		controlModule.fire('recordingFinished');
 	},
 
@@ -1577,7 +1404,7 @@ function download(filename, tespeedTime) {
 
 drawer.init();	
 
-Trail.init();
+//
 
 controlModule.setZoom(13.50);
 
