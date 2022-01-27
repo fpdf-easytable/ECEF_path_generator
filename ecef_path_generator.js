@@ -29,6 +29,21 @@ function readSingleFile(e) {
 	};
 }
 
+function ReadCookie(){
+	cookies={};
+	var allcookies = document.cookie;
+	var cookiearray = allcookies.split(';');
+	
+	for(var i=0; i<cookiearray.length; i++) {
+		name=cookiearray[i].split('=')[0];
+		cookies[name.trim()]=cookiearray[i].split('=')[1];
+	}
+	if(cookies.hasOwnProperty('latitude') && cookies.hasOwnProperty('longitude')){
+		return {'lat':Number(cookies.latitude), 'lng':Number(cookies.longitude)};
+	}
+	return {'lat':53.2672, 'lng':-1.63};
+}
+
 //##################################################################
 
 function distance2DPoints(x1, y1, x2, y2)
@@ -77,28 +92,6 @@ var mkVect2D=(function(){
 			this.x=x;
 			this.y=y;
 		},
-		isZero:function(){
-			return (this.x==0 && this.y==0);
-		},
-		cos:function(vect){
-			if(!vect.isZero() && !this.isZero()){
-				return (this.x*vect.x+this.y*vect.y)/(this.length() * vect.length());
-			}
-			throw "test vector is zero";
-		},
-		sin:function(v){
-			var cos=this.cos(v);
-			if(typeof cos=="number"){
-				return Math.sqrt(1-cos*cos);
-			}
-			throw "test vector is zero";
-		},
-		rotate:function(ang){
-			var kx=this.x*Math.cos(ang)-this.y*Math.sin(ang);
-			var ky=this.y*Math.cos(ang)+this.x*Math.sin(ang);
-			this.x=kx;
-			this.y=ky;
-		},		
 		copyTo(otherVect){
 			otherVect.x=this.x;
 			otherVect.y=this.y;
@@ -231,13 +224,10 @@ var map = L.map('map',{
 		getScaleFactor:function(){
 			return this.scaleFactor
 		},
-
 		gridSettings:{stroke: "#2929a3",'stroke-width':0.2, opacity: 0.6},
 		paper:Raphael("canvas", canvasWidth, canvasHeight),
-
-		wMtPx:0,
-		hMtPx:0,
-
+		wMtPx:0.0,
+		hMtPx:0.0,
 		mkGrid:function(){
 			if(this.grid.length>0){
 				for(var i=0; i<this.grid.length; i++){
@@ -372,7 +362,6 @@ var map = L.map('map',{
 				document.onmousemove = null;
 			}
 		},		
-		
 	};
 
 	return globalSettings;
@@ -429,8 +418,6 @@ var mkObjectEvt=(function(){
 	controlModule.eraseButton=document.getElementById('eraseButton');
 	controlModule.resetButton=document.getElementById('resetButton');
 
-	var masks={'record':1, 'recording':2, 'play':3, 'pause':4};
-
 	controlModule.reset=function(){
 		controlModule.pauseButton.style.display='none';
 		controlModule.playButton.style.display='none';
@@ -445,7 +432,6 @@ var mkObjectEvt=(function(){
 		controlModule.eraseButton.disabled = enable;
 		controlModule.resetButton.disabled = enable;
 	};
-
 
 	controlModule.addHandler('reset', function(){
 		controlModule.reset();
@@ -498,7 +484,6 @@ var mkObjectEvt=(function(){
 				controlModule.setSpeedTime(xT);
 			}
 		});
-		
 
 		this.playButton.addEventListener('click', function () {
 			controlModule.fire('play');
@@ -512,8 +497,7 @@ var mkObjectEvt=(function(){
 			controlModule.playButton.style.display='block';
 		});
 
-		this.recordButton.addEventListener('click', function () {
-			
+		this.recordButton.addEventListener('click', function () {			
 			controlModule.recordButton.style.display='none';
 			controlModule.recordingButton.style.display='block';
 			controlModule.disableButtons(true);
@@ -547,7 +531,6 @@ var mkObjectEvt=(function(){
 			controlModule.playButton.style.display='block';
 			controlModule.disableButtons(false);
 		});
-
 	};
 
 	controlModule.altitude=10;
@@ -625,7 +608,7 @@ var gadgetModule=(function(){
 			time=0;			
 		};
 		module.setFactor=function(x){
-			factor=Math.pow(2, x);
+			factor=1;//Math.pow(2, x);
 		}
 		var rf=1.0/1000;
 		return function(t){
@@ -727,7 +710,11 @@ var mkPOI=(function(){
 
 		getLatLng:function(){
 			return {'lat':this.lat, 'lng':this.lng};
-		}
+		},
+
+		setColour:function(colour){
+			this.POI.attr({stroke:'none', fill: colour});
+		},
 	};
 
 	return function(x, y, attributes, radius){
@@ -796,6 +783,7 @@ var mkPOI=(function(){
 			}
 		},
 
+		trailPOIcolour:"#ffb366",
 		trailLength:0.0,
 		mover:null,
 
@@ -806,12 +794,12 @@ var mkPOI=(function(){
 		},
 
 		addPoint:function(x, y){
-			this.set.push(mkPOI(x, y, {stroke:'none', fill: "#ffb366"}));
+			this.set.push(mkPOI(x, y, {stroke:'none', fill: this.trailPOIcolour}));
 			this.setUp();
 		},
 
-		addPointLatLng:function(latLng){			
-			this.set.push(mkPOI(0, 0, {stroke:'none', fill: "#ffb366"}));
+		addPointLatLng:function(latLng){
+			this.set.push(mkPOI(0, 0, {stroke:'none', fill: this.trailPOIcolour}));
 			var k=this.set.length-1;
 			this.set[k].setLatLng(latLng);
 			this.setUp();
@@ -835,7 +823,7 @@ var mkPOI=(function(){
 			if(idx<this.set.length-1){
 				return distance2DPoints(this.getGeoX(idx), this.getGeoY(idx), this.getGeoX(idx+1), this.getGeoY(idx+1));			
 			}
-			throw "something wrong in chunkMtLength";
+			throw "something wrong in segmentMtLength";
 		},
 
 		getGeoX:function(index){
@@ -925,9 +913,21 @@ var mkPOI=(function(){
 			for(var i=0; i<this.set.length; i++){
 				dataResult.push(this.set[i].getLatLng());
 			}
-			return JSON.stringify(dataResult);
+			return dataResult;
 		},
 
+		setColours:function(trailColour, moverColour){
+			if(moverColour!=''){
+				this.mover.attr({stroke:'none', fill: moverColour});
+			}
+			
+			if(trailColour!=''){
+				this.trailPOIcolour=trailColour;
+				for(var i=0; i<this.set.length; i++){
+					this.set[i].setColour(this.trailPOIcolour);
+				}
+			}
+		},
 	};
 
 	return Trail;
@@ -1159,7 +1159,6 @@ var drawer={
 				dt=Trail.getDelta(this.speed, this.speedTime);
 
 				this.dataR.push([dt.geoX, dt.geoY]);
-				this.speedData.push(this.speed);
 					
 				a=dt.time>=0;
 				if(dt.time>0){				
@@ -1176,8 +1175,9 @@ var drawer={
 				}
 			}
 			else{
-				this.dataR.push([Trail.getLastGeoX(), Trail.getLastGeoY()]);
+				this.altData.push(this.altitude);
 				this.speedData.push(this.speed);
+				this.dataR.push([Trail.getLastGeoX(), Trail.getLastGeoY()]);
 				controlModule.fire('recordingFinished');
 			}
 		}
@@ -1227,13 +1227,16 @@ var drawer={
 		this.frequency=newFrequency;
 	},
 
-	setCoordinates:function(centerLong, centerLat){
-		this.offSetX=Number(centerLong);
-		this.offSetY=Number(centerLat);
+	setCoordinates:function(lat, lng){
+		this.offSetX=Number(lng);
+		this.offSetY=Number(lat);
+		map.setView([Number(lat), Number(lng)], 13.50);
+		document.cookie='longitude='+this.offSetX;
+		document.cookie='latitude='+this.offSetY;
 	},
 
 	frequency:10, //in Hz (The sampling rate of the user motion has to be 10Hz (for Pluto))
-	toECEF:false,
+	toECEF:true,
 
 	processData:function(fileName){		
 		const ks=3600; //sec per hr
@@ -1306,29 +1309,40 @@ var drawer={
 	},
 
 	downloadData:function(fileName){
-		var result=Trail.exportData()+"\n";
-		result+=JSON.stringify(this.dataR)+"\n";
-		result+=JSON.stringify(this.speedData)+"\n";
-		result+=JSON.stringify(this.altData)+"\n";
-		result+=JSON.stringify({'lat':this.offSetY, 'lng':this.offSetX});
-		download(fileName+".txt",result);
+		var result={};
+		result['trail']=Trail.exportData();
+		result['recordedData']=this.dataR;
+		result['speedData']=this.speedData;
+		result['altitudeData']=this.altData;
+		result['coordinates']={'lat':this.offSetY, 'lng':this.offSetX};
+		download(fileName+".txt",JSON.stringify(result));
 	},
 
 	upload:function(fileContents){
 		this.erase();
-		var chunks=fileContents.split("\n");
-		var dataLatLng=JSON.parse(chunks[0].toString());
+		var dataFile=JSON.parse(fileContents.toString());
+		if(dataFile.hasOwnProperty('coordinates')){
+			this.setCoordinates(dataFile['coordinates'].lat, dataFile['coordinates'].lng)			
+			//map.setView(dataFile['coordinates'], 13.50);
+		}
+		
 		this.head=0;
-		for(var i=0; i<dataLatLng.length; i++){
-			Trail.addPointLatLng(dataLatLng[i]);
-			this.head++;
+		if(dataFile.hasOwnProperty('trail')){
+			for(var i=0; i<dataFile['trail'].length; i++){
+				Trail.addPointLatLng(dataFile['trail'][i]);
+				this.head++;
+			}
 		}
 
-		this.dataR=JSON.parse(chunks[1]);
-		this.speedData=JSON.parse(chunks[2]);
-		this.altData=JSON.parse(chunks[3]);
-		
-		map.setView(JSON.parse(chunks[4]), 13.50);		
+		if(dataFile.hasOwnProperty('recordedData')){
+			this.dataR=dataFile['recordedData'];
+		}
+		if(dataFile.hasOwnProperty('speedData')){
+			this.speedData=dataFile['speedData'];
+		}
+		if(dataFile.hasOwnProperty('altitudeData')){
+			this.altData=dataFile['altitudeData'];
+		}
 
 		gadgetModule.totalDistance.innerHTML=roundNumber(Trail.getTrailLengthKm(), 2);
 		Trail.moveToStart();
@@ -1356,7 +1370,7 @@ var drawer={
 			step=this.speedStep;
 		}
 		var a=1;
-		if(code==37 || code==81 || code==65 || code==88){
+		if(code==37 || code==81 || code==65 || code==90){
 			a=-1;
 		}
 		
@@ -1398,13 +1412,9 @@ function download(filename, tespeedTime) {
 	document.body.removeChild(element);
 }
 
-
-
 //####################################################################
 
 drawer.init();	
-
-//
 
 controlModule.setZoom(13.50);
 
@@ -1563,20 +1573,26 @@ window.addEventListener("DOMContentLoaded", function(){
 
 		document.getElementById('locationButton').addEventListener('click', function () {
 			var latitude=Number(document.getElementById('latitude').value);
-			var longitude=Number(document.getElementById('longitude').value);
-			//var altitude=Number(document.getElementById('altitude').value);
-					
-			if(Number.isNaN(latitude) || Number.isNaN(longitude) || Number.isNaN(altitude)){
+			var longitude=Number(document.getElementById('longitude').value);			
+			if(Number.isNaN(latitude) || Number.isNaN(longitude)){
 				alert('Please enter a valid number.');
 				return;
 			}
-			document.cookie='longitude='+longitude;
-			document.cookie='latitude='+latitude;
-			//document.cookie='altitude='+altitude;
-			drawer.setCoordinates(longitude, latitude);
-			map.setView([latitude, longitude], 14.25);
-			controlModule.setZoom(-0.50);
+			drawer.setCoordinates(latitude, longitude);
+		});
 
+		document.getElementById('coloursButton').addEventListener('click', function () {
+			var trailColour=document.getElementById('trail_colour').value;
+			var moverColour=document.getElementById('mover_colour').value;
+			trailColour=trailColour.trim();
+			moverColour=moverColour.trim();
+			if(trailColour==''){
+				trailColour="#ffb366";
+			}
+			if(moverColour==''){
+				moverColour='blue';
+			}
+			Trail.setColours(trailColour, moverColour);
 		});
 		
 		if(document.cookie==''){
@@ -1584,23 +1600,11 @@ window.addEventListener("DOMContentLoaded", function(){
 			document.cookie="whatisit=yes";
 		}
 		else{
-			cookies={};
-			ReadCookie();
-			if(cookies.hasOwnProperty('latitude') && cookies.hasOwnProperty('longitude')){
-				drawer.setCoordinates(cookies.longitude, cookies.latitude, cookies.altitude);
-				map.setView([Number(cookies.latitude), Number(cookies.longitude)], 14.25);
-			}
+			setTimeout(function(){
+				var latLng=ReadCookie();
+				drawer.setCoordinates(latLng.lat, latLng.lng);
+			}, 600);
 		}
 
 	})();
 })
-
-function ReadCookie() {
-	var allcookies = document.cookie;
-	cookiearray = allcookies.split(';');
-	
-	for(var i=0; i<cookiearray.length; i++) {
-		name=cookiearray[i].split('=')[0];
-		cookies[name.trim()]=cookiearray[i].split('=')[1];
-	}
-}

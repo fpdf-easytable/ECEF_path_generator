@@ -10,13 +10,19 @@ simulate GPS signal [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim).
 
 # Quick start:
 
-* Click "More Actions", select Settings, input the desire latitude, longitude and altitude
-where the map will be centered and adjust the Zoom.
+* Click Settings, input the desire latitude and longitude where the map will be centered. 
+Also the colours for the trail and mover can be customized.
 
 * Over the map, draw a path using the mouse while pressing the left button, if it is needed
 you can delete the last points drawn with the button Remove.
 
-* Adjust the initial speed using the bar below the map.
+* Adjust the initial speed:
+    - key W increment speed by 5km and Q decrement it by 5km,
+    - key S increment speed by 2km and A decrement it by 2km,
+    - key X increment speed by 1km and Z decrement it by 1km,
+    - right arrow increment speed by 0.5km and left arrow decrement it by 0.5km,
+
+* Adjust the altitude with up arrow (increment) and down arrow (decrement), altitued is in meters.
 
 * Adjust the initial time elapsed. At x1 this means that the mover will take 15 seconds 
 on a 1 kilometre path at 240 km/hr, at x2 it will take 7.5 (of real time), 
@@ -26,6 +32,8 @@ at x4 3.75 sec (of real time) and so on. This will not affect the recording.
 You can modify the speed as you wish.
 
 * After finishes the recording, you can see the result by pressing the Play button.
+
+* Zoom can be adjusted at any time.
 
 # Documentation
 
