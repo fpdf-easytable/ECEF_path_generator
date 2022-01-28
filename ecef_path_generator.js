@@ -94,11 +94,11 @@ var mkVect2D=(function(){
 		normalise:function(){
 			this.multiply(1.0/this.length());
 		},
-		distance:function(v, y){
-			if(typeof v === "object"){
-				return distance2DPoints(this.x, this.y, v.x, v.y);
+		distance:function(other){
+			if(typeof other === "object"){
+				return distance2DPoints(this.x, this.y, other.x, other.y);
 			}
-			return distance2DPoints(this.x, this.y, v, y);
+			throw "parameter passed is not an object."
 		},
 		setPositionAt:function(x, y){
 			this.x=x;
@@ -430,6 +430,10 @@ var mkObjectEvt=(function(){
 	controlModule.eraseButton=document.getElementById('eraseButton');
 	controlModule.resetButton=document.getElementById('resetButton');
 
+	controlModule.exportButton=document.getElementById('export');
+	controlModule.exportDataButton=document.getElementById('exportData');
+
+
 	controlModule.reset=function(){
 		controlModule.pauseButton.style.display='none';
 		controlModule.playButton.style.display='none';
@@ -438,11 +442,13 @@ var mkObjectEvt=(function(){
 		
 		this.disableButtons(false);
 	};
-		
+
 	controlModule.disableButtons=function(enable){
 		controlModule.deleteButton.disabled = enable;
 		controlModule.eraseButton.disabled = enable;
 		controlModule.resetButton.disabled = enable;
+		controlModule.exportButton.disabled=enable;
+		controlModule.exportDataButton.disabled=enable;		
 	};
 
 	controlModule.addHandler('reset', function(){
@@ -477,7 +483,7 @@ var mkObjectEvt=(function(){
 
 		var xT=0;
 		controlModule.setSpeedTime=function(xt){
-			if(xt>=0 && xt<6){
+			if(xt>=0 && xt<4){
 				xT=xt;
 				controlModule.fire('timeFactor', xT); 
 				document.getElementById('x_time').innerHTML='x'+Math.pow(2, xT);
@@ -491,7 +497,7 @@ var mkObjectEvt=(function(){
 		});
 		
 		document.getElementById('time_speed_more').addEventListener('click', function(){
-			if(xT<4){
+			if(xT<3){
 				xT++;
 				controlModule.setSpeedTime(xT);
 			}
@@ -522,10 +528,17 @@ var mkObjectEvt=(function(){
 			controlModule.playButton.style.display='none';
 			controlModule.recordingButton.style.display='none';
 			controlModule.recordButton.style.display='block';
+			
+			controlModule.eraseButton.disabled=false;
+			
+			controlModule.exportButton.disabled=true;
+			controlModule.exportDataButton.disabled=true;
 		});
 
 		this.resetButton.addEventListener('click', function () {
-			controlModule.fire('reset');		
+			controlModule.fire('reset');
+			controlModule.exportButton.disabled=true;
+			controlModule.exportDataButton.disabled=true;
 		});
 
 		this.eraseButton.addEventListener('click', function () {
@@ -542,6 +555,7 @@ var mkObjectEvt=(function(){
 			controlModule.recordButton.style.display='none';
 			controlModule.playButton.style.display='block';
 			controlModule.disableButtons(false);
+			controlModule.eraseButton.disabled=true;
 		});
 	};
 
@@ -573,6 +587,9 @@ var mkObjectEvt=(function(){
 		}
 		controlModule.fire('altitudeChanged', controlModule.altitude);
 	};
+	
+	controlModule.exportButton.disabled=true;
+	controlModule.exportDataButton.disabled=true;
 
 	return controlModule;
 })();
@@ -758,6 +775,7 @@ var mkPOI=(function(){
 	Trail={
 		set:[],
 		directions:[],
+		//distances:[],
 
 		looping:function(doSomething){
 			for(var i=0; i<this.set.length; i++){
@@ -878,8 +896,8 @@ var mkPOI=(function(){
 		getDelta:(function(){
 			var msH=1/3600000;//conversion factor from k/h to k/ms
 			var sH=1/3600; // conversion from k/h to k/sec
-			var timeThreshold=400;
-			var timeStep=300;
+			var timeThreshold=300;
+			var timeStep=200;
 			var vkms, tms, dk, dm, a;
 			return function(speed, speedTime){
 				if(this.segmentNum+1==this.set.length){
@@ -1223,14 +1241,13 @@ var drawer={
 		this.clearData();
 		this.resetRecording=true;
 		gadgetModule.distance.innerHTML='0.00';
-		gadgetModule.speed.innerHTML='0.00';
 		Trail.moveToStart();
 		this.counter=0;
 		this.wkDistance=0;
 		this.isRunning=false;
 		this.paused=false;
 		gadgetModule.resetTimer();
-		gadgetModule.speed.innerHTML=this.speed;
+		gadgetModule.speed.innerHTML=roundNumber(this.speed, 2);
 	},
 
 	segmentLength:function(nespeedTime, prev){
@@ -1258,7 +1275,12 @@ var drawer={
 	frequency:10, //in Hz (The sampling rate of the user motion has to be 10Hz (for Pluto))
 	toECEF:true,
 
-	processData:function(fileName){		
+	processData:function(fileName){
+		if(this.dataR.length==0){
+			alert("No data recorded.");
+			return;
+		}
+		//document.getElementById('wait1').style.display='block';
 		const ks=3600; //sec per hr
 		const sk=1.0/ks;
 		var a=false;
@@ -1325,6 +1347,7 @@ var drawer={
 				result+=preData[i][0] +', '+ preData[i][1] + "\n";
 			}
 		}
+		//document.getElementById('wait1').style.display='none';
 		download(fileName+".csv",result);
 	},
 
@@ -1523,12 +1546,17 @@ window.addEventListener("DOMContentLoaded", function(){
 						alert('Please enter a valid file name.');
 						return;
 					}
-					drawer.changeFrequency(x);
-					drawer.processData(fileName.value.trim());
-					frequency.value='';
-					fileName.value='';
-					this.closing();
-					document.getElementById('ecef').style.display='none';
+					document.getElementById('wait1').style.display='block';
+					setTimeout(function(){
+						drawer.changeFrequency(x);
+						drawer.processData(fileName.value.trim());
+						frequency.value='';
+						fileName.value='';
+						popUpAPI.closing();
+						document.getElementById('ecef').style.display='none';
+						document.getElementById('wait1').style.display='none';
+					}, 500);
+					
 				},
 				download:function(){
 					document.getElementById('popup_title').innerHTML='Download Path Configuration';
@@ -1583,6 +1611,7 @@ window.addEventListener("DOMContentLoaded", function(){
 		});
 
 		document.getElementById('ecefButton').addEventListener('click', function () {
+			document.getElementById('wait1').style.display='block';
 			popUpAPI.processECEF();
 		});
 		

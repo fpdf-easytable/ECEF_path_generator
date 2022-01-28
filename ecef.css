@@ -3,107 +3,26 @@ box-sizing: border-box;
 padding: 0; margin: 0; 
 }
 
+* {
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: -moz-none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+input {
+    -webkit-user-select: text;
+    -khtml-user-select: text;
+    -moz-user-select: text;
+    -o-user-select: text;
+    user-select: text;
+}
 
 body {
    background: #fff;
 	padding: 1px;
 }
-
-
-/* ================================================================ 
-This copyright notice must be kept untouched in the stylesheet at 
-all times.
-
-The original version of this stylesheet and the associated (x)html
-is available at http://www.cssplay.co.uk/menus/cssplay-radio-concertina.html
-Copyright (c) Stu Nicholls. All rights reserved.
-This stylesheet and the associated (x)html may be modified in any 
-way to fit your requirements.
-=================================================================== */
-
-ul.menu , ul.menu ul {
-	padding:0; 
-	margin:0; 
-	list-style:none; 
-	position:relative; 
-	font-family:arial, sans-serif;
-}
-ul.menu {z-index:100; padding:10px; border-radius:10px 10px 0 0; margin:0 auto;}
-ul.menu ul {
-	z-index:50;
-	background:#ddd; 
-	border-radius:0 0 10px 10px; 
-	padding-bottom:0;
-	-webkit-transition: 0.5s;
-	-moz-transition: 0.5s;
-	-ms-transition: 0.5s;	
-	-o-transition: 0.5s;
-	transition: 0.5s;
-}
-ul.menu li {line-height:47px; position:relative; text-indent:10px;}
-ul.menu > li {margin-top:2px; font-size:12px;}
-ul.menu label.open {
-	display:block; 
-	background:green url(radio-concertina/d-arrow.gif) no-repeat 170px 12px; 
-	line-height:47px; 
-	position:relative; 
-	z-index:100; 
-	font:bold 12px/47px arial, sans-serif; 
-	color:#fff; 
-}
-ul.menu label.open b {color:#ff0;}
-ul.menu span {
-display:block; 
-line-height:47px; 
-position:relative; 
-z-index:100; 
-border-radius:10px 10px 0 0;
-}
-ul.menu ul li {
-	margin-top:-47px;
-	-webkit-transition: 0.5s;
-	-moz-transition: 0.5s;
-	-ms-transition: 0.5s;
-	-o-transition: 0.5s;
-	transition: 0.5s;
-}
-
-ul.menu ul li {
-	display:block; 
-	font:normal 11px/47px arial, sans-serif; 
-	color:#000; 
-	background:#fff;
-}
-ul.menu ul li :hover {
-}
-ul.menu input {position:absolute; left:-9999px;}
-ul.menu li input:checked + label {background:#069;}
-ul.menu li input:checked ~ ul {background:#fff; padding-bottom:10px;}
-ul.menu li input:checked ~ ul li {margin-top:0;}
-
-ul.menu label.close {
-display:block; 
-width:200px; 
-height:47px;
-line-height:47px;  
-background:transparent url(radio-concertina/u-arrow.gif) no-repeat 170px 12px; 
-position:relative; 
-left:0; 
-z-index:90; 
-margin-top:-47px
-} 
-ul.menu input.tabs:checked ~ label.close {display:block; z-index:200;}
-ul.menu input.close:checked + label.close {display:none;}
-
-ul.menu input.close:checked ~ ul {background:#fff; padding-bottom:0;}
-ul.menu input.close:checked ~ ul li {margin-top:-47px;}
-
-/* end of copyright notice
-/*#################################################################*/
-/*#################################################################*/
-/*#################################################################*/
-/*#################################################################*/
-/*#################################################################*/
 
 .row::after {
   content: "";
@@ -195,21 +114,23 @@ margin:0px;
 /* ############################ */
 
 
-	#canvasContainer {
-		width:100%;
-		border:1px solid black; 
-		position:relative;		
-	}	
-	#canvas {
-		width:100%;
-		position:absolute;
-		z-index:80;		
-	}
-	#map {
-		width:100%;
-		position:absolute;
-		z-index:10;
-	}
+#canvasContainer {
+	width:100%;
+	border:1px solid black; 
+	position:relative;		
+}	
+
+#canvas {
+	width:100%;
+	position:absolute;
+	z-index:80;		
+}
+
+#map {
+	width:100%;
+	position:absolute;
+	z-index:10;
+}
 
 /*####################################################################*/
 
@@ -448,5 +369,4 @@ padding:10px;
 list-style-position: inside;
 list-style-type: circle;
 }
-/* ############################################################### */
 
