@@ -1,8 +1,8 @@
  /*********************************************************************
  * ecef_path_generator.js                                             *
  *                                                                    *
- * Version: 1.0                                                       *
- * Date:    13-08-2020                                                *
+ * Version: 2.0                                                       *
+ * Date:    28-01-2022                                                *
  * Author:  Dan Machado                                               *
  * Require  raphaeljs v2.2.1                                          *
  **********************************************************************/
@@ -14,6 +14,8 @@ function roundNumber(x, p){
 	}	
 	return (Math.round(x* Math.pow(10, d))/Math.pow(10,d)).toFixed(p);
 }
+
+//##################################################################
 
 //to load a file
 function readSingleFile(e) {
@@ -29,6 +31,8 @@ function readSingleFile(e) {
 	};
 }
 
+//##################################################################
+
 function ReadCookie(){
 	cookies={};
 	var allcookies = document.cookie;
@@ -38,8 +42,16 @@ function ReadCookie(){
 		name=cookiearray[i].split('=')[0];
 		cookies[name.trim()]=cookiearray[i].split('=')[1];
 	}
+	var lat;
+	var lng;
 	if(cookies.hasOwnProperty('latitude') && cookies.hasOwnProperty('longitude')){
-		return {'lat':Number(cookies.latitude), 'lng':Number(cookies.longitude)};
+		lat=Number(cookies.latitude);
+		lng=Number(cookies.longitude);
+	}
+	if(!isNaN(lat) && !isNaN(lng)){
+		document.getElementById("latitude").value=cookies.latitude;
+		document.getElementById("longitude").value=cookies.longitude;
+		return {'lat':lat,  'lng':lng};
 	}
 	return {'lat':53.2672, 'lng':-1.63};
 }
@@ -92,9 +104,9 @@ var mkVect2D=(function(){
 			this.x=x;
 			this.y=y;
 		},
-		copyTo(otherVect){
-			otherVect.x=this.x;
-			otherVect.y=this.y;
+		copyTo(other){
+			other.x=this.x;
+			other.y=this.y;
 		},
 		print:function(){
 			return '('+this.x+', '+this.y+')';
@@ -379,7 +391,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 L.control.scale({maxWidth:300}).addTo(map);
 
-map.setView([53.2672, -1.63], Settings.initialZoom());
+//map.setView([53.2672, -1.63], Settings.initialZoom());
 
 //####################################################################
 //####################################################################
@@ -986,8 +998,10 @@ var drawer={
 		});
 
 		controlModule.addHandler('scaleChange', function(x){			
-			globalSettings.mkGrid();
-			Trail.onZoom();
+			if(drawer.mapReady()){
+				globalSettings.mkGrid();
+				Trail.onZoom();
+			}
 		});
 	
 		controlModule.addHandler('altitudeChanged', function(alt){
@@ -1227,10 +1241,16 @@ var drawer={
 		this.frequency=newFrequency;
 	},
 
+	isMapReady:false,
+	mapReady:function(){
+		return this.isMapReady;
+	},
 	setCoordinates:function(lat, lng){
 		this.offSetX=Number(lng);
 		this.offSetY=Number(lat);
 		map.setView([Number(lat), Number(lng)], 13.50);
+		this.isMapReady=true;
+		globalSettings.mkGrid();
 		document.cookie='longitude='+this.offSetX;
 		document.cookie='latitude='+this.offSetY;
 	},
@@ -1320,10 +1340,17 @@ var drawer={
 
 	upload:function(fileContents){
 		this.erase();
-		var dataFile=JSON.parse(fileContents.toString());
+		var dataFile;//=JSON.parse(fileContents.toString());
+		try{
+			dataFile=JSON.parse(fileContents.toString());
+		}
+		catch(e){
+			alert("File could not be loaded because it has bad syntax or it's corrupted.");
+			return;
+		}
+
 		if(dataFile.hasOwnProperty('coordinates')){
 			this.setCoordinates(dataFile['coordinates'].lat, dataFile['coordinates'].lng)			
-			//map.setView(dataFile['coordinates'], 13.50);
 		}
 		
 		this.head=0;
@@ -1599,12 +1626,9 @@ window.addEventListener("DOMContentLoaded", function(){
 			popUpAPI.whatisit();
 			document.cookie="whatisit=yes";
 		}
-		else{
-			setTimeout(function(){
-				var latLng=ReadCookie();
-				drawer.setCoordinates(latLng.lat, latLng.lng);
-			}, 600);
-		}
+
+		var latLng=ReadCookie();
+		drawer.setCoordinates(latLng.lat, latLng.lng);
 
 	})();
 })
