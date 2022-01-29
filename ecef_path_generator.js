@@ -967,7 +967,7 @@ var mkPOI=(function(){
 //####################################################################
 //####################################################################
 //####################################################################
-
+var popUpAPI;
 var drawer={
 	speedTime:2,
 	status:0,
@@ -1137,7 +1137,7 @@ var drawer={
 				gadgetModule.updateAlt(this.altData[idx]);
 				dt=Trail.getDelta(this.speedData[idx++], this.speedTime);
 
-				a=dt.time>=0;
+				a=(dt.time>=0) && (idx<this.speedData.length);
 
 				if(dt.time>0){				
 					setTimeout(function(){
@@ -1189,11 +1189,10 @@ var drawer={
 				this.altData.push(this.altitude);
 				this.speedData.push(this.speed);
 				dt=Trail.getDelta(this.speed, this.speedTime);
-
-				this.dataR.push([dt.geoX, dt.geoY]);
-					
 				a=dt.time>=0;
-				if(dt.time>0){				
+				if(dt.time>0){
+					this.dataR.push([dt.geoX, dt.geoY]);
+
 					setTimeout(function(){
 						gadgetModule.timer(dt.time);
 						this.record();	
@@ -1280,34 +1279,56 @@ var drawer={
 			alert("No data recorded.");
 			return;
 		}
-		//document.getElementById('wait1').style.display='block';
-		const ks=3600; //sec per hr
-		const sk=1.0/ks;
+
+		/*
+		km/h -> km/sec -> mt/sec		
+		km/h *(hr/3600sec)*(1000mt/1km)		
+		km/h * (1000/3600)
+		mt/sec = km/h * (10/36)
+		*/
+		const mtSec=10.0/36.0;
+		const fps=1.0/this.frequency;
 		var a=false;
-		var fps=1.0/this.frequency;
+
 		var cos, sin, t, rawDistance, tz=fps;//1.0/this.frequency;
-		var j, dx, dy, cx, cy;
+		var dx, dy, cx, cy;
+
 		var preData=[];
 		var pt=Number(0.0);
 		var Lat=this.offSetY+Conversion.kmToDDNorth(this.dataR[0][1]*0.001);
 		var alt=this.altData[0];
 		if(this.toECEF){
 			preData.push([pt.toFixed(1), Conversion.toECEF(Lat, this.offSetX+Conversion.kmToDDEast(Lat, this.dataR[0][0]*0.001), alt)]);
+			pt+=0.1;
 		}
 		else{
 			preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, this.dataR[0][0]*0.001), alt]);
 		}
-		pt+=0.1;
 
-		for(var i=1; i<this.dataR.length; i++){
-			alt=this.altData[i];		
+		for(var i=1; i<this.dataR.length; i++){			
+			alt=this.altData[i];
 			rawDistance=this.segmentLength(this.dataR[i], this.dataR[i-1]);
-			t=ks*rawDistance/this.speedData[i-1];
+			
+			if(isNaN(rawDistance)){
+				continue;
+			}
+			
+			var spd=this.speedData[i-1]*mtSec;
+			if(spd==0){
+				console.log('check case speed = 0');
+				continue;
+			}
+			t=rawDistance/spd;
+			
 			cos=(this.dataR[i][0]-this.dataR[i-1][0])/rawDistance;
 			sin=(this.dataR[i][1]-this.dataR[i-1][1])/rawDistance;
-			dx=tz*cos*this.speedData[i-1]*sk;
-			dy=tz*sin*this.speedData[i-1]*sk;
-			j=1;
+			/*
+			v=d/t
+			d=v*t
+			*/
+			var dtz=tz*spd;
+			dx=cos*dtz;
+			dy=sin*dtz;
 			cx=this.dataR[i-1][0];
 			cy=this.dataR[i-1][1];
 			while(t-tz>=0){
@@ -1316,17 +1337,18 @@ var drawer={
 				Lat=this.offSetY+Conversion.kmToDDNorth(cy*0.001);
 				if(this.toECEF){
 					preData.push([pt.toFixed(1), Conversion.toECEF(Lat,this.offSetX+Conversion.kmToDDEast(Lat, cx*0.001), alt)]);
+					pt+=0.1;
 				}
 				else{
 					preData.push([Lat, this.offSetX+Conversion.kmToDDEast(Lat, cx*0.001), alt]);
 				}
-				pt+=0.1;
-				j++;
+				
 				t-=tz;
+			
 				if(a){
 					tz=fps;
-					dx=tz*cos*this.speedData[i-1]*sk;
-					dy=tz*sin*this.speedData[i-1]*sk;
+					dx=cos*tz*spd;
+					dy=sin*tz*spd;
 					a=false;
 				}
 			}
@@ -1335,6 +1357,7 @@ var drawer={
 				tz=fps-t;
 			}
 		}
+
 		var result='';
 		var g=(pt.toFixed(1)).toString().length;
 		var num;
@@ -1347,8 +1370,12 @@ var drawer={
 				result+=preData[i][0] +', '+ preData[i][1] + "\n";
 			}
 		}
-		//document.getElementById('wait1').style.display='none';
-		download(fileName+".csv",result);
+		if(this.toECEF){
+			download(fileName+".csv", result, "application/csv;charset=utf-8;");
+		}
+		else{
+			download(fileName+".txt", result, 'data:text/plain;charset=utf-8;');
+		}
 	},
 
 	downloadData:function(fileName){
@@ -1358,12 +1385,12 @@ var drawer={
 		result['speedData']=this.speedData;
 		result['altitudeData']=this.altData;
 		result['coordinates']={'lat':this.offSetY, 'lng':this.offSetX};
-		download(fileName+".txt",JSON.stringify(result));
+		download(fileName+".txt", JSON.stringify(result), 'data:text/plain;charset=utf-8;');
 	},
 
 	upload:function(fileContents){
 		this.erase();
-		var dataFile;//=JSON.parse(fileContents.toString());
+		var dataFile;
 		try{
 			dataFile=JSON.parse(fileContents.toString());
 		}
@@ -1382,10 +1409,12 @@ var drawer={
 				Trail.addPointLatLng(dataFile['trail'][i]);
 				this.head++;
 			}
+			//console.log('trail length: '+dataFile['trail'].length);
 		}
 
 		if(dataFile.hasOwnProperty('recordedData')){
 			this.dataR=dataFile['recordedData'];
+			//console.log('recorded data: '+this.dataR.length);
 		}
 		if(dataFile.hasOwnProperty('speedData')){
 			this.speedData=dataFile['speedData'];
@@ -1452,14 +1481,26 @@ var drawer={
 
 //####################################################################
 
-function download(filename, tespeedTime) {
-	var element = document.createElement('a');
-	element.setAttribute('href', 'data:tespeedTime/plain;charset=utf-8,' + encodeURIComponent(tespeedTime));
-	element.setAttribute('download', filename);
-	element.style.display = 'none';
-	document.body.appendChild(element);
-	element.click();
-	document.body.removeChild(element);
+function download(fileName, data, dataType)
+{
+	var csvData = data;
+	var blob = new Blob([ csvData ], {type : dataType});
+
+	if(window.navigator.msSaveBlob){
+		// FOR IE BROWSER
+		navigator.msSaveBlob(blob, fileName);
+	}
+	else{
+		// FOR OTHER BROWSERS
+		var element = document.createElement('a');
+		element.setAttribute('href', URL.createObjectURL(blob));
+		element.setAttribute('download', fileName);
+		element.style.display = 'none';
+		document.body.appendChild(element);
+		element.click();
+		document.body.removeChild(element);
+	}
+	popUpAPI.closing();
 }
 
 //####################################################################
@@ -1505,13 +1546,12 @@ window.addEventListener("DOMContentLoaded", function(){
 		var dim=document.getElementById('dim');
 		var popUp=document.getElementById('pop_wrapper');	
 		var body=document.getElementById('pop_up');
-		//var body=document.getElementById('closePopUp');
 		var container=document.getElementById('popup_content');
 
 		popUp.style.top=0.1*window.innerHeight+'px';
 		body.style.maxHeight=0.8*window.innerHeight+'px';
 
-		var popUpAPI={
+		 popUpAPI={
 				display:function(){
 					dim.style.display='block';
 					popUp.style.visibility='visible';
@@ -1527,6 +1567,7 @@ window.addEventListener("DOMContentLoaded", function(){
 					document.getElementById('rawData').style.display='none';
 					document.getElementById('configuration').style.display='none';
 					document.getElementById('description').style.display='none';
+					document.getElementById('wait22').style.display='none';
 				},
 				exportECEF:function(){
 					document.getElementById('popup_title').innerHTML='Export to ECEF';
@@ -1537,7 +1578,6 @@ window.addEventListener("DOMContentLoaded", function(){
 					var frequency=document.getElementById('frequency');
 					var fileName=document.getElementById('fileName');
 					var x=Number(frequency.value.trim());
-					//console.log(x);
 					if(!Number.isInteger(x) || x==0){
 						alert('Please enter a valid integer frequency.');
 						return;
@@ -1546,17 +1586,12 @@ window.addEventListener("DOMContentLoaded", function(){
 						alert('Please enter a valid file name.');
 						return;
 					}
-					document.getElementById('wait1').style.display='block';
-					setTimeout(function(){
-						drawer.changeFrequency(x);
-						drawer.processData(fileName.value.trim());
-						frequency.value='';
-						fileName.value='';
-						popUpAPI.closing();
-						document.getElementById('ecef').style.display='none';
-						document.getElementById('wait1').style.display='none';
-					}, 500);
-					
+					popUpAPI.wait();
+					drawer.changeFrequency(x);
+					drawer.processData(fileName.value.trim());
+					frequency.value='';
+					fileName.value='';
+					//popUpAPI.closing();
 				},
 				download:function(){
 					document.getElementById('popup_title').innerHTML='Download Path Configuration';
@@ -1571,6 +1606,11 @@ window.addEventListener("DOMContentLoaded", function(){
 				whatisit:function(){
 					document.getElementById('popup_title').innerHTML='Description';
 					document.getElementById('description').style.display='block';					
+					this.display();
+				},
+				wait:function(){
+					document.getElementById('popup_title').innerHTML='Processing data';
+					document.getElementById('wait22').style.display='block';					
 					this.display();
 				},
 				processDownload:function(){
@@ -1611,7 +1651,6 @@ window.addEventListener("DOMContentLoaded", function(){
 		});
 
 		document.getElementById('ecefButton').addEventListener('click', function () {
-			document.getElementById('wait1').style.display='block';
 			popUpAPI.processECEF();
 		});
 		

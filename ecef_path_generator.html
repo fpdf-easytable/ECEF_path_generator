@@ -17,15 +17,9 @@
 	<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" dintegrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
 	<!-- -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-
-
-
-</style>
 
 </head>
 <body>
-
 
 <!-- ####################################################-->
 
@@ -50,12 +44,12 @@
 						<td class="tleft">Save as:</td>
 						<td><input type="text" id="fileName"></td>
 					</tr>
-					
 				</table>
 				<button id="ecefButton">Download</button>
-				<div id="wait1" style="padding:5px; font-size:10px; color:blue; display: none;">
-					Processing data, please wait...
-				</div>
+			</div>
+			
+			<div id="wait22">
+				<img src="waiting.gif" alt="Processing data, please wait..."/>
 			</div>
 			<div id="rawData">
 				<div id="form2">
@@ -258,11 +252,10 @@
 				</div>
 			</div>
 		</div>
-		<!-- ############################################ -->
-		<!-- ############################################ -->
+
 		<!-- ############################################ -->
 
- 	</div>
+ 		</div>
  	</div>
 
 	<div id="container" class="col-s-10" style="padding:0px;">
