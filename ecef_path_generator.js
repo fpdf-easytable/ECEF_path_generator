@@ -1409,12 +1409,10 @@ var drawer={
 				Trail.addPointLatLng(dataFile['trail'][i]);
 				this.head++;
 			}
-			//console.log('trail length: '+dataFile['trail'].length);
 		}
 
 		if(dataFile.hasOwnProperty('recordedData')){
 			this.dataR=dataFile['recordedData'];
-			//console.log('recorded data: '+this.dataR.length);
 		}
 		if(dataFile.hasOwnProperty('speedData')){
 			this.speedData=dataFile['speedData'];
@@ -1457,8 +1455,8 @@ var drawer={
 			if(this.speed>=step){
 				this.speed-=step;
 			}
-			else{
-				this.speed=0;
+			if(this.speed<=0){
+				this.speed=0.5;
 			}
 		}
 		else{
