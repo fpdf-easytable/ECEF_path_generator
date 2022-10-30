@@ -5,8 +5,7 @@ simulate GPS signal [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim).
 
 # Demo
 
-[Working demo](http://46.32.229.68/ECEF/)
-
+[Working demo](http://103.102.44.126/ECEF/ecef_path_generator.html)
 
 # Quick start:
 
