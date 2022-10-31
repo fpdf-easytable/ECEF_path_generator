@@ -1386,6 +1386,7 @@ var drawer={
 		result['recordedData']=this.dataR;
 		result['speedData']=this.speedData;
 		result['altitudeData']=this.altData;
+		result['timeData']=this.timeData;
 		result['coordinates']={'lat':this.offSetY, 'lng':this.offSetX};
 		download(fileName+".txt", JSON.stringify(result), 'data:text/plain;charset=utf-8;');
 	},
@@ -1418,6 +1419,8 @@ var drawer={
 		}
 		if(dataFile.hasOwnProperty('speedData')){
 			this.speedData=dataFile['speedData'];
+			this.speed=this.speedData[0];
+			gadgetModule.speed.innerHTML=roundNumber(this.speedData[0], 2);
 		}
 		if(dataFile.hasOwnProperty('altitudeData')){
 			this.altData=dataFile['altitudeData'];
