@@ -481,23 +481,23 @@ var mkObjectEvt=(function(){
 			}
 		});
 
-		var xT=0;
+		var xT=1;
 		controlModule.setSpeedTime=function(xt){
-			if(xt>=0 && xt<4){
+			if(xt>0 && xt<6){
 				xT=xt;
 				controlModule.fire('timeFactor', xT); 
-				document.getElementById('x_time').innerHTML='x'+Math.pow(2, xT);
+				document.getElementById('x_time').innerHTML='x'+xT;
 			}
 		};
 		document.getElementById('time_speed_less').addEventListener('click', function(){
-			if(xT>0){
+			if(xT>1){
 				xT--;
 				controlModule.setSpeedTime(xT);
 			}
 		});
 		
 		document.getElementById('time_speed_more').addEventListener('click', function(){
-			if(xT<3){
+			if(xT<5){
 				xT++;
 				controlModule.setSpeedTime(xT);
 			}
@@ -985,10 +985,10 @@ var drawer={
 		
 		controlModule.init();
 
-		this.setSpeed(50);
+		this.setSpeed(10);
 
 		controlModule.addHandler('timeFactor', function(x){
-			drawer['speedTime']=Math.pow(2, x);
+			drawer['speedTime']=x;
 			gadgetModule.changeTimeFactor(x);
 		});
 
@@ -1164,7 +1164,7 @@ var drawer={
 
 	resetRecording:true,
 	dataR:[],
-
+	timeOutID:0,
 	record:(function(){
 		var a=true;
 		return function(){
@@ -1195,7 +1195,7 @@ var drawer={
 				if(dt.time>0){
 					this.dataR.push([dt.geoX, dt.geoY]);
 
-					setTimeout(function(){
+					this.timeOutID=setTimeout(function(){
 						gadgetModule.timer(dt.time);
 						this.record();	
 					}.bind(this), dt.time/this.speedTime);
@@ -1211,6 +1211,7 @@ var drawer={
 				this.altData.push(this.altitude);
 				this.speedData.push(this.speed);
 				this.dataR.push([Trail.getLastGeoX(), Trail.getLastGeoY()]);
+				//clearTimeout(timeOutID);
 				controlModule.fire('recordingFinished');
 			}
 		}
@@ -1229,13 +1230,13 @@ var drawer={
 		Trail.reset();
 		gadgetModule.totalDistance.innerHTML='0.00';
 		gadgetModule.distance.innerHTML='0.00';
-		gadgetModule.speed.innerHTML='0.00';
 		this.counter=0;
 		this.wkDistance=0;
 		this.isRunning=false;
 		this.paused=false;
 		this.status=0;
 		gadgetModule.resetTimer();
+		this.setSpeed(10);
 	},
 
 	reset:function(){
