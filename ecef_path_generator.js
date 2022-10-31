@@ -896,9 +896,9 @@ var mkPOI=(function(){
 		getDelta:(function(){
 			var msH=1/3600000;//conversion factor from k/h to k/ms
 			var sH=1/3600; // conversion from k/h to k/sec
-			var timeThreshold=300;
-			var timeStep=200;
-			var vkms, tms, dk, dm, a;
+			var timeThreshold=250;
+			var timeStep=300;
+			var vkms, tms, dm, a;
 			return function(speed, speedTime){
 				if(this.segmentNum+1==this.set.length){
 					return {time:-1};
@@ -908,17 +908,17 @@ var mkPOI=(function(){
 				}
 
 				vkms=speed*msH;
-				tms=(0.001*this.distanceMt)/vkms;
-				dk=0;
-				a=false;
+				tms=(0.001*this.distanceMt)/vkms;				
+				a=true;
 
 				if(tms>timeThreshold){
-					tms=timeStep;
-				}
-				else{
-					a=true;
-					if(tms<3){
-						console.log('jump to next vertix');
+					if(timeStep+250<tms){//tms>550
+						tms=timeStep;
+						a=false;
+					}
+					else if(tms>420){
+						tms*=0.5;
+						a=false;
 					}
 				}
 
@@ -931,9 +931,11 @@ var mkPOI=(function(){
 				this.moveToNext(tms, speedTime);
 
 				if(a){
+					//console.log('d: '+this.distanceMt);
 					this.distanceMt=0;
 					this.segmentNum++;
 				}
+				//console.log(tms);
 				return {time:tms, distance:0.001*dm, geoX:this.currentGeoPos.x, geoY:this.currentGeoPos.y};
 			};
 		})(),
