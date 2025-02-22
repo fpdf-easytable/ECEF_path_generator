@@ -3,11 +3,9 @@ This is an application that generates ECEF coordinates from a drawn path on a ma
 The data generated can be used to generate GPS signal files for applications that 
 simulate GPS signal [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim).
 
-# Demo
+[![ecef-path-generator.png](https://i.postimg.cc/1X1b5cvV/ecef-path-generator.png)](https://postimg.cc/FdGTTc5h)
 
-[Working demo](http://103.102.44.126/ECEF/ecef_path_generator.html)
-
-# Quick start:
+## Quick start:
 
 * Click Settings, input the desire latitude and longitude where the map will be centered. 
 Also the colours for the trail and mover can be customized.
@@ -34,7 +32,7 @@ You can modify the speed as you wish.
 
 * Zoom can be adjusted at any time.
 
-# Documentation
+## Documentation
 
 * *Recorder / Player*
 	* **Record** starts to record the position and speed of the mover. Once the recording has finished, speed can not be change. However it can be reset.
