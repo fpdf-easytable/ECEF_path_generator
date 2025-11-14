@@ -143,6 +143,20 @@
 			</ul><br/>
 			<h4>Documentation</h4>
 			<ul id="docList">
+				<li>Key binding
+					<ul>
+		    			<li><i>W</i> increment speed by 5km</li>
+		    			<li><i>Q</i> decrement it by 5km</li>
+		    			<li><i>S</i> increment speed by 2km</li>
+		    			<li><i>A</i> decrement it by 2km</li>
+						<li><i>X</i> increment speed by 1km</li>
+						<li><i>Z</i> decrement it by 1km</li>
+	    				<li><i>RightArrow</i> increment speed by 0.5km</li>
+	    				<li><i>LeftArrow</i> decrement it by 0.5km</li>
+						<li><i>UpArrow</i> increment the altitude by 10 mtrs</li>
+						<li><i>DownArrow</i> decrement the altitude by 10 mtrs</li>
+					</ul>
+				</li>
 				<li>Recorder / Player
 					<ul>
 						<li><i>Record</i> starts to record the position and speed of the mover. Once the recording
@@ -151,15 +165,18 @@
 						<li><i>Delete</i> delete the current path.</li>
 						<li><i>Remove</i> as far as the path have not been recorded, clicking remove will remove
 						 the last point of the path, click it as needed to remove the many point.</li>
+						<li><i>Append</i> allows to add more points to the path. After recording a path, you can add more points to it by clicking Reset.</li>					
 					</ul>
 				</li>
 				<li>More Actions
 					<ul>
+						<li><i>SSet View</i> clicking this button will allow you to center the map on the location selected by clicking on the map with the mouse's left button. Click it again to draw a path.</li>
 						<li><i>Settings</i> here you can set the latitude, longitude, altitude, zoom and colour for the path and mover.</li>
 						<li><i>Export to ECEF</i> after recording, you can download the path in ECEF 
 						coordinates, you will need to input the frequency in Hertz for the 
 						sample data. To use with <a href="https://github.com/osqzss/gps-sdr-sim" target="_blank">gps-sdr-sim</a> the sampling rate of the user motion has to be 10Hz.</li> 
-						<li><i>Download data</i> this allows you to download the raw data a path was recorded, so you can import it later to play it, reset and change the speed and generate a different ECEF coordinate file.</li>
+						<li><i>Download Raw Data</i> this allows you to download the raw data a path was recorded, so you can import it later to play it, reset and change the speed and generate a different ECEF coordinate file.</li>
+						<li><i>Download GPX</i> export the path as gpx. The gpx format is widely supported by various GPS devices and software, making it a standard choice for outdoor enthusiasts and professionals.</li>
 					</ul>
 				</li>
 			</ul>
@@ -255,7 +272,7 @@
 			<div style="display:table-row;">
 				<div style="margin-top:6px;">
 					<input id="export" type="button" style="width:100%;" value="Export to ECEF"/>
-					<input id="exportData" type="button" style="width:100%;margin-top: 5px;" value="Download data"/>
+					<input id="exportData" type="button" style="width:100%;margin-top: 5px;" value="Download Raw Data"/>
 					<input id="exportGPX" type="button" style="width:100%;margin-top: 5px;" value="Download GPX"/>
 					<button style="width:100%;margin-top: 5px;">
 						<label for="upload">
