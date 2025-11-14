@@ -32,15 +32,20 @@ You can modify the speed as you wish.
 
 * Zoom can be adjusted at any time.
 
+* Center the map to any point clicked on the map.
+
 ## Documentation
 
 * *Recorder / Player*
 	* **Record** starts to record the position and speed of the mover. Once the recording has finished, speed can not be change. However it can be reset.
 	* **Reset** reset the path ready to be recorded again from the beginning. Speed is override.
 	* **Delete** delete the current path.
-	* **Remove** as far as the path have not been recorded, clicking remove will remove the last point of the path, click it as needed to remove the many point.
+	* **Remove** as far as the path has not been recorded, clicking remove will remove the last point of the path, click it as needed to remove the many point.
+   * **Append** allows to add more points to the path. After recording a path, you can add more points to it by clicking Reset. 
 
 * *More Actions*
+   * **Set View** clicking this button will allow you to center the map on the location selected by clicking on the map with the mouse's left button. Click it again to draw a path.
 	* **Settings** here you can set the latitude, longitude, altitude, zoom and colour for the path and mover.
 	* **Export to ECEF** after recording, you can download the path in ECEF coordinates, you will need to input the frequency in Hertz for the sample data. To use with [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim") the sampling rate of the user motion has to be 10Hz. 
-   * **Download data** this allows you to download the raw data a path was recorded, so you can import it later to play it, reset and change the speed and generate a different ECEF coordinate file.
+   * **Download Raw Data** this allows you to download the raw data a path was recorded, so you can import it later to play it, reset and change the speed and generate a different ECEF coordinate file.
+   * **Download GPX** export the path as gpx. The gpx format is widely supported by various GPS devices and software, making it a standard choice for outdoor enthusiasts and professionals.
