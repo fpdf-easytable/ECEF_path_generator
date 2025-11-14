@@ -10,13 +10,19 @@
 
 <head>	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 	<title>ECEF Path Generator</title>
-	<link rel="stylesheet" href="ecef.css" type="text/css" media="screen">
-	<script type="text/javascript" src="raphael.min.js"></script>  
-		<!-- -->
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" dintegrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+	<!-- link rel="stylesheet" href="ecef.css" type="text/css" media="screen"-->
+	<!-- script type="text/javascript" src="raphael.min.js"></script -->  
+	
+	<script src="https://unpkg.com/raphael@2.3.0/raphael.min.js" crossorigin=""></script>
+	
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.0/dist/leaflet.css" dintegrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
 	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" dintegrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
 	<!-- -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style type="text/css">
+* {box-sizing: border-box;padding: 0;margin: 0;}* {-khtml-user-select: none;-ms-user-select: none;-moz-user-select: none;-webkit-user-select: none;-o-user-select: none;user-select: none;}body {background: #fff;padding: 1px;}.row::after {content: "";clear: both;display: table;}[class*="col-"] {float: left;padding: 15px;}html {font-family: "Lucida Sans", sans-serif;}ul {list-style-type: none;margin: 0;padding: 0;}#gadgets li{margin-bottom: 15px;font-size:14px;text-align:right }.menus li {padding: 8px;margin-bottom: 7px;background-color: #33b5e5;color: #ffffff;box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);text-align:center;}.menus li:hover {background-color: #0099cc;}.aside {background-color: #33b5e5;padding: 15px;color: #ffffff;text-align: center;font-size: 14px;box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);}#speed-panel {text-align:left;margin:0;}@media only screen and (min-width: 600px) {.col-s-1 {width: 8.33%;}.col-s-2 {width: 16.66%;}.col-s-3 {width: 25%;}.col-s-4 {width: 33.33%;}.col-s-5 {width: 41.66%;}.col-s-6 {width: 50%;}.col-s-7 {width: 58.33%;}.col-s-8 {width: 66.66%;}.col-s-9 {width: 75%;}.col-s-10 {width: 83.33%;}.col-s-11 {width: 91.66%;}.col-s-12 {width: 100%;}}@media only screen and (min-width: 768px) {.col-1 {width: 8.33%;}.col-2 {width: 16.66%;}.col-3 {width: 25%;}.col-4 {width: 33.33%;}.col-5 {width: 41.66%;}.col-6 {width: 50%;}.col-7 {width: 58.33%;}.col-8 {width: 66.66%;}.col-9 {width: 75%;}.col-10 {width: 83.33%;}.col-11 {width: 91.66%;}.col-12 {width: 100%;}}#canvasContainer {width:100%;border:1px solid black;position:relative;}#canvas {width:100%;position:absolute;z-index:80;}#map {width:100%;position:absolute;z-index:10;}#sbar{margin:5px;height:24px;padding:1px;}div.cntBotton{margin:10px 0;line-height:37px;text-align:center;background-color: #33b5e5;color: #ffffff;font-size:18px;}div.cntBotton:hover{background-color: #00ffff;font-weight:bold;}.clear{clear:both;}.fLeft{float:left;}.fRight{float:right;}#speed{color:#0066cc;}#distance {color:#00b300;}#altitude{color: #e8ef13;}.font1{font-size: 25px;}input[type="file"] {display: none;}.custom-btn {border: 1px solid #0066cc;display: inline-block;width:100%;text-align:center;padding: 10px 12px;cursor: pointer;}.custom-btn:hover {background-color: #00ffff;}.slider {-moz-appearance: none;-webkit-appearance: none;width: 100%;height: 5px;background: #d3d3d3;outline: none;opacity: 0.7;-webkit-transition: .2s;transition: opacity .2s;margin:0px;}.slider:hover {opacity: 2;}.slider::-webkit-slider-thumb {-moz-appearance: none;-webkit-appearance: none;appearance: none;width: 25px;height: 25px;background: #0066cc;cursor: pointer;}.slider::-moz-range-thumb {width: 25px;height: 25px;background: #0066cc;cursor: pointer;}#dim {position:fixed;top: 0;left: 0;width: 100%;height:200em;background: #a1a1a1;z-index: 1000;opacity:0.40;display:none;}#pop_wrapper {position:fixed;width: 100%;height:0;top:0;left:0;visibility:hidden;-webkit-transition: opacity 0.7s;-moz-transition: opacity 0.7s;-ms-transition: opacity 0.7s;-o-transition: opacity 0.7s;transition: opacity 0.7s;z-index:1001;text-align: center;}#pop_up {position: relative;display: inline-block;background:#ffffff;border-radius: 5px;}#pop_up_content {padding:20px;overflow-y:auto;max-height:600px;}#pop_up_header {background:#4c9df1;line-height:20px;text-align:left;padding:5px;color:#fff;}#popup_content {padding:5px;}#popup_content > div {display:none;}#closePopUp {float:right;margin-right:4px;font-size:16px;font-weight:bold;cursor:default;}.abcr td{padding:3px;}.tleft{text-align:right;}.tright{text-align:left;}.flex-container {display: flex;justify-content: space-around;}.divRow{display:table-row;}.divCell{display:table-row;}#squareList{list-style-position: inside;list-style-type: square;}#squareList li{padding:10px;}#docList{list-style-position: inside;list-style-type: initial;}#docList li{padding:10px;}#docList ul{list-style-position: inside;list-style-type: circle;}
+</style>
 
 </head>
 <body>
@@ -55,6 +61,13 @@
 				<div id="form2">
 				Save as: <input type="text" id="fileNameR"><br/>
 				<button id="rawDataButton">Download</button>
+				</div>
+			</div>
+			<div id="gpxData">
+				<div id="form2">
+				GPX file name: <input type="text" id="gpxNameR"><br/>
+				Description: <input type="text" id="gpxDesc"><br/>
+				<button id="gpxDataButton">Download</button>
 				</div>
 			</div>
 			<div id="configuration">
@@ -213,34 +226,37 @@
 
 			<div style="display:table-row;">
 				<div style="margin-top:6px;">
-					<input id="deletButton" type="button" style="float:right;display:table-cell;margin-right: 3px;" value="Delete">
+					<button id="appendButton" type="button" style="width:45%;display:table-cell;margin-right:3px;">Append</button>
+					<button id="deletButton" type="button" style="float:right;display:table-cell;margin-right: 3px; padding: 1px 3px;">Delete</button>
 				</div>
 			</div>
 
 			<div style="display:table-row;">
+
 				<div style="display: inline-block;">
-					<div style="font-size: 12px;margin-top:6px;">Zoom</div>
-					<input id="zoom_less" type="button" style="margin-right: 5px;" value="-"/>
-					<input id="zoom_more" type="button" style="margin-right: 10px;" value="+"/>
-				</div>
-				<div style="display: inline-block;">
-					<div style="font-size: 12px;margin-top:6px;">Speed Step</div>
-					<div id="speed_step" style="font-size: 12px;margin-top:6px;text-align: center;">1km</div>
+					<div style="font-size: 12px;margin-top:6px;">Time Elapsed</div>
+					<button id="time_speed_less" type="button" style="margin-right: 1px; padding: 1px 7px;">-</button>
+					<div id="x_time" style="font-size:12px; display:inline;padding: 5px;">x1</div>
+					<button id="time_speed_more" type="button" style="margin-right: 10px; padding: 1px 5px;">+</button>
 				</div>
 				
 			</div>
 
 			<div style="display:table-row;">
-				<div style="font-size: 12px;margin-top:6px;">Time Elapsed</div>
-				<input id="time_speed_less" type="button" style="margin-right: 1px;" value="-"/>
-				<div id="x_time" style="font-size:12px; display:inline;padding: 10px;">x1</div>
-				<input id="time_speed_more" type="button" style="margin-right: 10px;" value="+"/>
+				<div style="display: inline-block;">
+					<div style="font-size: 12px;margin-top:6px;">Zoom</div>
+					<button id="zoom_less" type="button" style="margin-right: 5px; padding: 1px 7px;">-</button>
+					<button id="zoom_more" type="button" style="margin-right: 10px; padding: 1px 5px;">+</button>
+				</div>
+				
+				<button id="moveToBtn" style="padding:1px 3px">Set View</button>
 			</div>
 
 			<div style="display:table-row;">
 				<div style="margin-top:6px;">
 					<input id="export" type="button" style="width:100%;" value="Export to ECEF"/>
 					<input id="exportData" type="button" style="width:100%;margin-top: 5px;" value="Download data"/>
+					<input id="exportGPX" type="button" style="width:100%;margin-top: 5px;" value="Download GPX"/>
 					<button style="width:100%;margin-top: 5px;">
 						<label for="upload">
 							<div >Import data</div>
@@ -273,6 +289,10 @@
 
 <script type="text/javascript" src="ecef_path_generator.js"></script>
 
+<!-- script type="text/javascript">
 
+</script-->
+
+ 
 
 </html>

@@ -33,6 +33,8 @@ function readSingleFile(e) {
 
 //##################################################################
 
+const defaultZoom=13.50;
+
 function ReadCookie(){
 	cookies={};
 	var allcookies = document.cookie;
@@ -290,8 +292,8 @@ var map = L.map('map',{
 
 		containerPointToLatLng:function(pxX, pxY){
 			var mapCenter=map.getCenter();			
-			var lat=mapCenter.lat+Conversion.kmToDDNorth((0.5*this.Height-pxY)*this.scFacInv);
-			var lng=mapCenter.lng+Conversion.kmToDDEast(lat, (pxX-0.5*this.Width)*this.scFacInv);
+			var lat=Number(mapCenter.lat+Conversion.kmToDDNorth((0.5*this.Height-pxY)*this.scFacInv));
+			var lng=Number(mapCenter.lng+Conversion.kmToDDEast(lat, (pxX-0.5*this.Width)*this.scFacInv));
 			return {'lat':lat, 'lng':lng};
  		},
 
@@ -331,7 +333,7 @@ var map = L.map('map',{
 			
 			var r=distance2DPoints(center.x, center.y, pos.x, pos.y);
 			var factor=R/r;
-			
+
 			var px=factor*(pos.x-center.x);
 			var py=factor*(center.y-pos.y);
 			
@@ -373,7 +375,20 @@ var map = L.map('map',{
 				document.onmouseup = null;
 				document.onmousemove = null;
 			}
-		},		
+		},
+		
+		getPosition3:function(cbk, e) {
+			var lx=this.canvas.getBoundingClientRect().left;
+			var ly=this.canvas.getBoundingClientRect().top;
+			var rx=lx+this.Width;
+			var ry=ly+this.Height;
+
+			x=e.clientX;
+			y=e.clientY;
+			if(x>lx && x<rx && y>ly && y<ry){
+				cbk(x-lx, y-ly);
+			}
+		},
 	};
 
 	return globalSettings;
@@ -428,11 +443,12 @@ var mkObjectEvt=(function(){
 	controlModule.recordingButton=document.getElementById('recordingButton');
 	controlModule.deleteButton=document.getElementById('deletButton');
 	controlModule.eraseButton=document.getElementById('eraseButton');
+	controlModule.appendButton=document.getElementById('appendButton');
 	controlModule.resetButton=document.getElementById('resetButton');
 
 	controlModule.exportButton=document.getElementById('export');
 	controlModule.exportDataButton=document.getElementById('exportData');
-
+	controlModule.exportGPXButton=document.getElementById('exportGPX');
 
 	controlModule.reset=function(){
 		controlModule.pauseButton.style.display='none';
@@ -446,9 +462,11 @@ var mkObjectEvt=(function(){
 	controlModule.disableButtons=function(enable){
 		controlModule.deleteButton.disabled = enable;
 		controlModule.eraseButton.disabled = enable;
+		controlModule.appendButton.disabled = enable;
 		controlModule.resetButton.disabled = enable;
 		controlModule.exportButton.disabled=enable;
-		controlModule.exportDataButton.disabled=enable;		
+		controlModule.exportDataButton.disabled=enable;
+		controlModule.exportGPXButton.disabled=enable;
 	};
 
 	controlModule.addHandler('reset', function(){
@@ -530,19 +548,26 @@ var mkObjectEvt=(function(){
 			controlModule.recordButton.style.display='block';
 			
 			controlModule.eraseButton.disabled=false;
+			controlModule.appendButton.disabled=false;
 			
 			controlModule.exportButton.disabled=true;
 			controlModule.exportDataButton.disabled=true;
+			controlModule.exportGPXButton.disabled=true;
 		});
 
 		this.resetButton.addEventListener('click', function () {
 			controlModule.fire('reset');
 			controlModule.exportButton.disabled=true;
 			controlModule.exportDataButton.disabled=true;
+			controlModule.exportGPXButton.disabled=true;
 		});
 
 		this.eraseButton.addEventListener('click', function () {
 			controlModule.fire('erase');
+		});
+
+		this.appendButton.addEventListener('click', function () {
+			controlModule.fire('append');
 		});
 
 		this.addHandler('readyToPlay', function(){
@@ -556,6 +581,7 @@ var mkObjectEvt=(function(){
 			controlModule.playButton.style.display='block';
 			controlModule.disableButtons(false);
 			controlModule.eraseButton.disabled=true;
+			controlModule.appendButton.disabled=true;
 		});
 	};
 
@@ -590,6 +616,7 @@ var mkObjectEvt=(function(){
 	
 	controlModule.exportButton.disabled=true;
 	controlModule.exportDataButton.disabled=true;
+	controlModule.exportGPXButton.disabled=true;
 
 	return controlModule;
 })();
@@ -605,8 +632,12 @@ var ZoomViewer = L.Control.extend({
 		container.style.tespeedTimeAlign = 'left';
 		map.on('zoomstart zoom zoomend', function(ev){
 			var zp=map.getZoom();
+			//console.log(ev);
+			
 			gauge.innerHTML = 'Zoom level: ' + zp;
 			controlModule.fire('scaleChange', zp-globalSettings.baseZ);
+			//window.wx_msg.postMessage("zoom");
+			
 		})
 		container.appendChild(gauge);
 		return container;
@@ -680,7 +711,6 @@ var gadgetModule=(function(){
 
 //####################################################################
 //####################################################################
-//####################################################################
 
 var mkPOI=(function(){
 	var objectPOI={
@@ -719,6 +749,13 @@ var mkPOI=(function(){
 			var pos=globalSettings.latLngToPixelCoordinates({'lat':this.lat, 'lng':this.lng});
 			this.POI.attr({transform: 't'+pos.x+','+pos.y});
 			this.POI.toFront();
+		},
+		
+		translate:function(x, y){
+			this.POI.translate(x, y);
+			this.POI.toFront();
+			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+			return; 
 		},
 
 		getGeoX:function(){
@@ -761,7 +798,7 @@ var mkPOI=(function(){
 
 		module.POI=globalSettings.paper.circle(0, 0, poiR);
 		module.POI.attr(att);
-		module.POI.attr({transform: 't0,0'});
+		//module.POI.attr({transform: 't0,0'});
 		module.setPositionXY(x, y);
 
 		return module;
@@ -788,6 +825,15 @@ var mkPOI=(function(){
 				shape.onZoom();
 			});
 			this.mover.attr(globalSettings.mtsCooPxs2(this.currentGeoPos.x, this.currentGeoPos.y));
+			this.mover.toFront();
+		},
+		
+		onTranslate:function(x, y){
+			this.looping(function(shape){
+				shape.translate(x, y);
+			});
+
+			this.mover.translate(x, y);
 			this.mover.toFront();
 		},
 
@@ -968,11 +1014,12 @@ var mkPOI=(function(){
 
 //####################################################################
 //####################################################################
-//####################################################################
+
 var popUpAPI;
 var drawer={
 	speedTime:2,
 	status:0,
+	getPositionFromPointer:false,
 	offSetX:-1.63,
 	offSetY:53.2672,
 	altitude:10,
@@ -995,9 +1042,14 @@ var drawer={
 		controlModule.setSpeedTime(0);
 
 		controlModule.addHandler('play', function(){
+			drawer.getPositionFromPointer=false;
+			document.getElementById('moveToBtn').style.fontWeight="normal";
 			drawer.play();
 		});
 		controlModule.addHandler('record', function(){
+			drawer.isRecording=true;
+			drawer.getPositionFromPointer=false;
+			document.getElementById('moveToBtn').style.fontWeight="normal";
 			drawer.record();
 		});
 
@@ -1015,6 +1067,10 @@ var drawer={
 
 		controlModule.addHandler('erase', function(){
 			drawer.deleteLast();
+		});
+
+		controlModule.addHandler('append', function(){
+			drawer.append();
 		});
 
 		controlModule.addHandler('scaleChange', function(x){			
@@ -1037,7 +1093,7 @@ var drawer={
 	lastX:0.0,
 	lastY:0.0,
 	getData:function(x, y){
-		if(this.status>0){
+		if(this.status>0 || this.getPositionFromPointer){
 			return;
 		}
 		var d=0;
@@ -1066,7 +1122,6 @@ var drawer={
 				Trail.addPoint(this.lastX+j*tx*f, this.lastY+j*ty*g);
 				this.head++;
 			}
-
 		}
 
 		if(d>this.mxG || this.head==0){
@@ -1086,8 +1141,12 @@ var drawer={
 		if(this.head>0){
 			gadgetModule.totalDistance.innerHTML=roundNumber(Trail.getTrailLengthKm(), 2);
 		}
-		
 	},
+
+	append:function(){
+		this.status=0;
+	},
+
 	counter:0,
 	head:0,
 	paused:false,
@@ -1162,14 +1221,20 @@ var drawer={
 		}
 	}()),
 
+	canMove:function(){
+		return !this.isRunning && !this.isRecording;
+	},
+	
 	resetRecording:true,
 	dataR:[],
 	timeOutID:0,
+	isRecording:false,
 	record:(function(){
 		var a=true;
 		return function(){
 			if(this.head==0){				
 				controlModule.fire('reset');
+				this.isRecording=false;
 				return;
 			}
 
@@ -1213,6 +1278,7 @@ var drawer={
 				this.dataR.push([Trail.getLastGeoX(), Trail.getLastGeoY()]);
 				//clearTimeout(timeOutID);
 				controlModule.fire('recordingFinished');
+				this.isRecording=false;
 			}
 		}
 	}()),
@@ -1264,14 +1330,12 @@ var drawer={
 	mapReady:function(){
 		return this.isMapReady;
 	},
-	setCoordinates:function(lat, lng){
+	setCoordinates:function(lat, lng, zoomLevel){
 		this.offSetX=Number(lng);
 		this.offSetY=Number(lat);
-		map.setView([Number(lat), Number(lng)], 13.50);
+		map.setView([Number(lat), Number(lng)], zoomLevel);
 		this.isMapReady=true;
 		globalSettings.mkGrid();
-		document.cookie='longitude='+this.offSetX;
-		document.cookie='latitude='+this.offSetY;
 	},
 
 	frequency:10, //in Hz (The sampling rate of the user motion has to be 10Hz (for Pluto))
@@ -1381,7 +1445,7 @@ var drawer={
 		}
 	},
 
-	downloadData:function(fileName){
+	downloadData:function(fileName, fileExt){
 		var result={};
 		result['trail']=Trail.exportData();
 		result['recordedData']=this.dataR;
@@ -1389,7 +1453,58 @@ var drawer={
 		result['altitudeData']=this.altData;
 		result['timeData']=this.timeData;
 		result['coordinates']={'lat':this.offSetY, 'lng':this.offSetX};
-		download(fileName+".txt", JSON.stringify(result), 'data:text/plain;charset=utf-8;');
+		result['zoom']=map.getZoom();
+		if(fileExt=="txt"){
+			download(fileName+".txt", JSON.stringify(result), 'data:text/plain;charset=utf-8;');
+			return;
+		}
+
+		const d = new Date();
+		const dd=d.toISOString();
+		let gpx='<?xml version="1.0"?><gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:gpxtrkx="http://www.garmin.com/xmlschemas/TrackStatsExtension/v1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" creator="ECEF Path Generator" version="2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackStatsExtension/v1 http://www8.garmin.com/xmlschemas/TrackStatsExtension.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd"><metadata><link href="https://github.com/fpdf-easytable/ECEF_path_generator"><text>ECEF Path Generator</text></link>';
+		gpx+='<time>'+dd+'</time>';
+		gpx+='<desc>'+document.getElementById('gpxDesc').value.trim()+'</desc>';
+		gpx+='</metadata><trk>';
+		
+		document.getElementById('gpxDesc').value="";
+		
+		var pathName="Some Name";
+     	var pathColour="Blue";
+		var pathLength=roundNumber(this.wkDistance, 3);
+		var pathElapsedTime=document.getElementById('elapsedtime').innerHTML;
+		var maxSpeed=0;
+		for(var i=0; i<result['speedData'].length; i++){
+			if(maxSpeed<result['speedData'][i]){
+				maxSpeed=result['speedData'][i];
+			}
+		}
+
+		var maxElevation=0;
+		var minElevation=100000;
+		for(var i=0; i<result['altitudeData'].length; i++){
+			if(maxElevation<result['altitudeData'][i]){
+				maxElevation=result['altitudeData'][i];
+			}
+			if(result['altitudeData'][i]<minElevation){
+				minElevation=result['altitudeData'][i];
+			}
+		}
+
+		gpx+='<name>'+fileName+'</name><extensions><gpxx:TrackExtension>';
+		gpx+='<gpxx:DisplayColor>'+pathColour+'</gpxx:DisplayColor></gpxx:TrackExtension><gpxtrkx:TrackStatsExtension>';
+		gpx+='<gpxtrkx:Distance>'+pathLength+'</gpxtrkx:Distance>';
+		gpx+='<gpxtrkx:TotalElapsedTime>'+pathElapsedTime+'</gpxtrkx:TotalElapsedTime>';
+		gpx+='<gpxtrkx:MaxSpeed>'+maxSpeed+'</gpxtrkx:MaxSpeed>';
+		gpx+='<gpxtrkx:MaxElevation>'+maxElevation+'</gpxtrkx:MaxElevation>';
+		gpx+='<gpxtrkx:MinElevation>'+minElevation+'</gpxtrkx:MinElevation>';
+		gpx+='</gpxtrkx:TrackStatsExtension></extensions><trkseg>';
+		for(var i=0; i<result['trail'].length; i++){
+			gpx+='<trkpt lat="'+result['trail'][i].lat+'" lon="'+result['trail'][i].lng+'"></trkpt>';
+		}
+
+		gpx+='</trkseg></trk></gpx>';
+		download(fileName+".gpx", gpx, 'data:text/xml;charset=utf-8;');
+
 	},
 
 	upload:function(fileContents){
@@ -1402,9 +1517,13 @@ var drawer={
 			alert("File could not be loaded because it has bad syntax or it's corrupted.");
 			return;
 		}
-
+		
 		if(dataFile.hasOwnProperty('coordinates')){
-			this.setCoordinates(dataFile['coordinates'].lat, dataFile['coordinates'].lng)			
+			let zm=defaultZoom;
+			if(dataFile.hasOwnProperty('zoom')){
+				zm=dataFile['zoom']
+			}
+			this.setCoordinates(dataFile['coordinates'].lat, dataFile['coordinates'].lng, zm);
 		}
 		
 		this.head=0;
@@ -1473,7 +1592,6 @@ var drawer={
 				this.speed=this.maxSpeed;
 			}
 		}
-		document.getElementById('speed_step').innerHTML=step+'km';
 		document.getElementById('speed').innerHTML=roundNumber(this.speed, 2);
 	},
 
@@ -1569,6 +1687,7 @@ window.addEventListener("DOMContentLoaded", function(){
 					dim.style.display='none';
 					document.getElementById('ecef').style.display='none';
 					document.getElementById('rawData').style.display='none';
+					document.getElementById('gpxData').style.display='none';
 					document.getElementById('configuration').style.display='none';
 					document.getElementById('description').style.display='none';
 					document.getElementById('wait22').style.display='none';
@@ -1602,31 +1721,37 @@ window.addEventListener("DOMContentLoaded", function(){
 					document.getElementById('rawData').style.display='block';					
 					this.display();
 				},
+				downloadGPX:function(){
+					document.getElementById('popup_title').innerHTML='Download Path GPX';
+					document.getElementById('gpxData').style.display='block';					
+					this.display();
+				},
 				settingsECEF:function(){
 					document.getElementById('popup_title').innerHTML='Settings';
-					document.getElementById('configuration').style.display='block';					
+					document.getElementById('configuration').style.display='block';
+
 					this.display();
 				},
 				whatisit:function(){
 					document.getElementById('popup_title').innerHTML='Description';
-					document.getElementById('description').style.display='block';					
+					document.getElementById('description').style.display='block';
 					this.display();
 				},
 				wait:function(){
 					document.getElementById('popup_title').innerHTML='Processing data';
-					document.getElementById('wait22').style.display='block';					
+				    document.getElementById('wait22').style.display='block';
 					this.display();
 				},
-				processDownload:function(){
-					var fileName=document.getElementById('fileNameR');
+				processDownload:function(fileName, id, fileExt){
+
 					if(!fileName.value.trim()){
 						alert('Please enter a valid file name.');
 						return;
 					}
-					drawer.downloadData(fileName.value.trim());
+					drawer.downloadData(fileName.value.trim(), fileExt);
 					fileName.value='';
 					this.closing();
-					document.getElementById('rawData').style.display='none';
+					document.getElementById(id).style.display='none';
 				},
 		};
 
@@ -1646,38 +1771,74 @@ window.addEventListener("DOMContentLoaded", function(){
 			popUpAPI.closing(event);
 		}); 
 		
-		document.getElementById('export').addEventListener('click', function () {
+		document.getElementById('export').addEventListener('click', function(){
 			popUpAPI.exportECEF();
 		});
 
-		document.getElementById('settings').addEventListener('click', function () {
+		document.getElementById('settings').addEventListener('click', function(){
 			popUpAPI.settingsECEF();
 		});
 
-		document.getElementById('ecefButton').addEventListener('click', function () {
+		document.getElementById('ecefButton').addEventListener('click', function(){
 			popUpAPI.processECEF();
 		});
 		
-		document.getElementById('exportData').addEventListener('click', function () {
+		document.getElementById('exportData').addEventListener('click', function(){
 			popUpAPI.download();
 		});
 
-		document.getElementById('whatisit').addEventListener('click', function () {
+		document.getElementById('exportGPX').addEventListener('click', function(){
+			popUpAPI.downloadGPX();
+		});
+
+		document.getElementById('moveToBtn').addEventListener('click', function(){
+			drawer.getPositionFromPointer=!drawer.getPositionFromPointer && drawer.canMove();
+			if(drawer.getPositionFromPointer){
+				document.getElementById('moveToBtn').style.fontWeight="bold";
+			}
+			else{
+				document.getElementById('moveToBtn').style.fontWeight="normal";	
+			}
+		});
+
+		document.getElementById('canvasContainer').addEventListener('mousedown', function(e){
+			if(drawer.getPositionFromPointer){// && drawer.status==0){
+				globalSettings.getPosition3(function(x,y){
+					var latLng=globalSettings.containerPointToLatLng(x, y);
+
+					drawer.setCoordinates(latLng.lat, latLng.lng, map.getZoom());
+
+					map.once("moveend", function(){
+						var org=globalSettings.containerCenter();
+						org.add2(-1*x, -1*y);
+						Trail.onTranslate(org.x, org.y);
+					}.bind(this));					
+				}, e);				
+			}
+		});
+
+		document.getElementById('whatisit').addEventListener('click', function(){
 			popUpAPI.whatisit();
 		});
 
-		document.getElementById('rawDataButton').addEventListener('click', function () {
-			popUpAPI.processDownload();
+		document.getElementById('rawDataButton').addEventListener('click', function(){
+			popUpAPI.processDownload(document.getElementById('fileNameR'), 'rawData', 'txt');
 		});
 
-		document.getElementById('locationButton').addEventListener('click', function () {
+		document.getElementById('gpxDataButton').addEventListener('click', function(){
+			popUpAPI.processDownload(document.getElementById('gpxNameR'), 'gpxData', 'gpx');
+		});
+
+		document.getElementById('locationButton').addEventListener('click', function(){
 			var latitude=Number(document.getElementById('latitude').value);
 			var longitude=Number(document.getElementById('longitude').value);			
 			if(Number.isNaN(latitude) || Number.isNaN(longitude)){
 				alert('Please enter a valid number.');
 				return;
 			}
-			drawer.setCoordinates(latitude, longitude);
+			drawer.setCoordinates(latitude, longitude, defaultZoom);
+			document.cookie='longitude='+longitude;
+			document.cookie='latitude='+latitude;
 		});
 
 		document.getElementById('coloursButton').addEventListener('click', function () {
@@ -1695,12 +1856,12 @@ window.addEventListener("DOMContentLoaded", function(){
 		});
 		
 		if(document.cookie==''){
-			popUpAPI.whatisit();
+			//popUpAPI.whatisit();
 			document.cookie="whatisit=yes";
 		}
 
 		var latLng=ReadCookie();
-		drawer.setCoordinates(latLng.lat, latLng.lng);
+		drawer.setCoordinates(latLng.lat, latLng.lng, defaultZoom);
 
 	})();
 })
