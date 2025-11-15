@@ -1690,7 +1690,7 @@ window.addEventListener("DOMContentLoaded", function(){
 					document.getElementById('gpxData').style.display='none';
 					document.getElementById('configuration').style.display='none';
 					document.getElementById('description').style.display='none';
-					document.getElementById('wait22').style.display='none';
+					//document.getElementById('wait22').style.display='none';
 				},
 				exportECEF:function(){
 					document.getElementById('popup_title').innerHTML='Export to ECEF';
@@ -1739,7 +1739,7 @@ window.addEventListener("DOMContentLoaded", function(){
 				},
 				wait:function(){
 					document.getElementById('popup_title').innerHTML='Processing data';
-				    document.getElementById('wait22').style.display='block';
+				   // document.getElementById('wait22').style.display='block';
 					this.display();
 				},
 				processDownload:function(fileName, id, fileExt){

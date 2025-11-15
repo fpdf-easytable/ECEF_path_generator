@@ -1,11 +1,22 @@
 # ECEF path generator
-This is an application that generates ECEF coordinates from a drawn path on a map. 
+This is an application that generates ECEF coordinates from a drawning path on a map. 
 The data generated can be used to generate GPS signal files for applications that 
 simulate GPS signal [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim).
 
-[![ecef-path-generator.png](https://i.postimg.cc/1X1b5cvV/ecef-path-generator.png)](https://postimg.cc/FdGTTc5h)
+[![ecef-path-generator.png](https://i.postimg.cc/Jhyh4BJD/ecef-path-generator.png)](https://postimg.cc/jWbTM2Mt)
+
+## Features
+
+* ONE file application
+* Export as csv containing ECEF coordinates.
+* Download the raw data of the drawing path containing speed and altitude.
+* Download the drawing path as gpx file.
 
 ## Quick start:
+
+* Download [ECEF path generator](https://github.com/fpdf-easytable/ECEF_path_generator/blob/master/ecef_path_generator.html).
+
+* Open it with your internet browser.
 
 * Click Settings, input the desire latitude and longitude where the map will be centered. 
 Also the colours for the trail and mover can be customized.
@@ -49,3 +60,8 @@ You can modify the speed as you wish.
 	* **Export to ECEF** after recording, you can download the path in ECEF coordinates, you will need to input the frequency in Hertz for the sample data. To use with [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim") the sampling rate of the user motion has to be 10Hz. 
    * **Download Raw Data** this allows you to download the raw data a path was recorded, so you can import it later to play it, reset and change the speed and generate a different ECEF coordinate file.
    * **Download GPX** export the path as gpx. The gpx format is widely supported by various GPS devices and software, making it a standard choice for outdoor enthusiasts and professionals.
+
+## GPX
+
+The main objective of this application is to generate ECEF coordinates for gps simulators
+that use that kind of data. However we can export the raw data as a basic gpx file.
