@@ -1,5 +1,5 @@
 # ECEF path generator
-This is an application that generates ECEF coordinates from a drawning path on a map. 
+This is an application that generates ECEF coordinates from a drawn path on a map. 
 The data generated can be used to generate GPS signal files for applications that 
 simulate GPS signal [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim).
 
@@ -9,8 +9,8 @@ simulate GPS signal [gps-sdr-sim](https://github.com/osqzss/gps-sdr-sim).
 
 * ONE file application
 * Export as csv containing ECEF coordinates.
-* Download the raw data of the drawing path containing speed and altitude.
-* Download the drawing path as gpx file.
+* Download the raw data of the drawn path containing speed and altitude.
+* Download the drawn path as gpx file.
 
 ## Quick start:
 
