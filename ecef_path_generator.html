@@ -63,7 +63,7 @@ This program is free software. It comes without any warranty, to
 			</div>
 			
 			<div id="wait22">
-				<img src="waiting.gif" alt="Processing data, please wait..."/>
+				<p>Processing data, please wait...</p>
 			</div>
 			<div id="rawData">
 				<div id="form2">
@@ -236,16 +236,16 @@ This program is free software. It comes without any warranty, to
 		<div style="display:table;padding:1px; dborder:1px solid; width:100%;">
 			<div style="display:table-row;">
 				<div style="margin-top:0px;">
-					<input id="recordButton" type="button" style="width:100%;" value="Record">
-					<input id="recordingButton" type="button" disabled="disable" style="width:100%;display:none;" value="Recording">
-					<input id="playButton" type="button" style="width:100%;display:none;" value="Play">
-					<input id="pauseButton" type="button" style="width:100%;display:none;margin-right: 3px;" value="Pause">
+					<button id="recordButton" type="button" style="width:100%;">Record</button>
+					<button id="recordingButton" type="button" disabled="disable" style="width:100%;display:none;">Recording</button>
+					<button id="playButton" type="button" style="width:100%;display:none;">Play</button>
+					<button id="pauseButton" type="button" style="width:100%;display:none;margin-right: 3px;">Pause</button>
 				</div>
 			</div>
 			<div style="display:table-row;">
 				<div style="margin-top:6px;">
-					<input id="resetButton" type="button" style="width:45%;display:table-cell;margin-right:3px;" value="Reset">
-					<input id="eraseButton" type="button" style="float:right;width:45%;display:table-cell;margin-right:3px;" value="Remove">
+					<button id="resetButton" type="button" style="width:45%;display:table-cell;margin-right:3px;">Reset</button>
+					<button id="eraseButton" type="button" style="float:right;width:45%;display:table-cell;margin-right:3px;">Remove</button>
 				</div>
 			</div>
 
@@ -279,17 +279,17 @@ This program is free software. It comes without any warranty, to
 
 			<div style="display:table-row;">
 				<div style="margin-top:6px;">
-					<input id="export" type="button" style="width:100%;" value="Export to ECEF"/>
-					<input id="exportData" type="button" style="width:100%;margin-top: 5px;" value="Download Raw Data"/>
-					<input id="exportGPX" type="button" style="width:100%;margin-top: 5px;" value="Download GPX"/>
+					<button id="export" type="button" style="width:100%;">Export to ECEF</button>
+					<button id="exportData" type="button" style="width:100%;margin-top: 5px;">Download Raw Data</button>
+					<button id="exportGPX" type="button" style="width:100%;margin-top: 5px;">Export to GPX</button>
 					<button style="width:100%;margin-top: 5px;">
 						<label for="upload">
 							<div >Import data</div>
 						</label>
 						<input id="upload" type="file"/>	
 					</button>
-					<input id="settings" type="button" style="width:100%;margin-top: 5px;" value="Settings"/>					
-					<input id="whatisit" type="button" style="width:100%;margin-top: 5px;" value="What is it?"/>
+					<button id="settings" type="button" style="width:100%;margin-top: 5px;">Settings</button>				
+					<button id="whatisit" type="button" style="width:100%;margin-top: 5px">Documentation</button>
 				</div>
 			</div>
 		</div>
