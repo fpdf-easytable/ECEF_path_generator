@@ -952,13 +952,24 @@ var mkPOI=(function(){
 				if(this.distanceMt<=0){			
 					this.distanceMt=this.segmentMtLength(this.segmentNum);
 				}
+				
+				/* 
+				README: initially vkms=speed*msH; 
+				but because we multiply by 0.001 and then by 1000, 
+				better to use this, so we avoid 2 multiplications:
 
 				vkms=speed*msH;
-				tms=(0.001*this.distanceMt)/vkms;				
+				tms=(0.001*this.distanceMt)/vkms;	
+				dm=1000*vkms*tms;
+				*/
+
+				vkms=speed*sH;
+				tms=this.distanceMt/vkms;	
+				
 				a=true;
 
-				if(tms>timeThreshold){
-					if(timeStep+250<tms){//tms>550
+				if(tms>timeThreshold){//timeThreshold=250;
+					if(timeStep+250<tms){//tms>550 //timeStep=300;
 						tms=timeStep;
 						a=false;
 					}
@@ -968,7 +979,8 @@ var mkPOI=(function(){
 					}
 				}
 
-				dm=1000*vkms*tms;
+				dm=vkms*tms;
+				
 				this.distanceMt-=dm;
 
 				this.directions[this.segmentNum].copyTo(this.deltaGeo);
@@ -977,7 +989,6 @@ var mkPOI=(function(){
 				this.moveToNext(tms, speedTime);
 
 				if(a){
-					//console.log('d: '+this.distanceMt);
 					this.distanceMt=0;
 					this.segmentNum++;
 				}
