@@ -1195,35 +1195,43 @@ var drawer={
 	run:(function(){
 		var a=true;
 		var idx=0;
+		var tm=0;
 		return function(){
 			if(this.paused ){
 				return;
 			}
 
 			if(a){
-				if(this.isRunning){
-					gadgetModule.speed.innerHTML=roundNumber(this.speedData[idx], 2);
-					gadgetModule.updateAlt(this.altData[idx]);
-				}
-				dt=Trail.getDelta(this.speedData[idx++], this.speedTime);
+				
+				dt=Trail.getDelta(this.speedData[idx+1], this.speedTime);
 
 				a=(dt.time>=0) && (idx<this.speedData.length);
 
-				if(dt.time>0){		
+				if(dt.time>0){
 					setTimeout(function(){
-						gadgetModule.timer(dt.time);
+						//gadgetModule.timer(dt.time);
 						this.run();	
 					}.bind(this), dt.time/this.speedTime);
 					this.wkDistance+=dt.distance;
-					gadgetModule.distance.innerHTML=roundNumber(this.wkDistance, 2);
+					
 				}
 				else{
 					this.run();
 					a=true;
 					idx=0;
+					tm=0;
 				}
+				if(this.isRunning){
+					gadgetModule.speed.innerHTML=roundNumber(this.speedData[idx], 2);
+					gadgetModule.updateAlt(this.altData[idx++]);
+				}
+				gadgetModule.distance.innerHTML=roundNumber(this.wkDistance, 2);
+				gadgetModule.timer(tm);
+				tm=dt.time;
 			}
 			else{
+				gadgetModule.timer(tm);
+				//console.log("last bit: "+tm);
 				if(this.isRunning){
 					controlModule.fire('readyToPlay');
 				}
