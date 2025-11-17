@@ -450,15 +450,6 @@ var mkObjectEvt=(function(){
 	controlModule.exportDataButton=document.getElementById('exportData');
 	controlModule.exportGPXButton=document.getElementById('exportGPX');
 
-	controlModule.reset=function(){
-		controlModule.pauseButton.style.display='none';
-		controlModule.playButton.style.display='none';
-		controlModule.recordingButton.style.display='none';
-		this.recordButton.style.display='block';
-		
-		this.disableButtons(false);
-	};
-
 	controlModule.disableButtons=function(enable){
 		controlModule.deleteButton.disabled = enable;
 		controlModule.eraseButton.disabled = enable;
@@ -470,7 +461,12 @@ var mkObjectEvt=(function(){
 	};
 
 	controlModule.addHandler('reset', function(){
-		controlModule.reset();
+		controlModule.pauseButton.style.display='none';
+		controlModule.playButton.style.display='none';
+		controlModule.recordingButton.style.display='none';
+		controlModule.recordButton.style.display='block';
+		
+		controlModule.disableButtons(false);
 	});
 
 	controlModule.init=function(){
@@ -992,7 +988,7 @@ var mkPOI=(function(){
 					this.distanceMt=0;
 					this.segmentNum++;
 				}
-				//console.log(tms);
+
 				return {time:tms, distance:0.001*dm, geoX:this.currentGeoPos.x, geoY:this.currentGeoPos.y};
 			};
 		})(),
@@ -1200,24 +1196,26 @@ var drawer={
 		var a=true;
 		var idx=0;
 		return function(){
-			if(this.paused){
+			if(this.paused ){
 				return;
 			}
 
 			if(a){
-				gadgetModule.speed.innerHTML=roundNumber(this.speedData[idx], 2);
-				gadgetModule.updateAlt(this.altData[idx]);
+				if(this.isRunning){
+					gadgetModule.speed.innerHTML=roundNumber(this.speedData[idx], 2);
+					gadgetModule.updateAlt(this.altData[idx]);
+				}
 				dt=Trail.getDelta(this.speedData[idx++], this.speedTime);
 
 				a=(dt.time>=0) && (idx<this.speedData.length);
 
-				if(dt.time>0){				
+				if(dt.time>0){		
 					setTimeout(function(){
 						gadgetModule.timer(dt.time);
 						this.run();	
 					}.bind(this), dt.time/this.speedTime);
 					this.wkDistance+=dt.distance;
-					gadgetModule.distance.innerHTML=roundNumber(this.wkDistance,2);
+					gadgetModule.distance.innerHTML=roundNumber(this.wkDistance, 2);
 				}
 				else{
 					this.run();
@@ -1225,8 +1223,10 @@ var drawer={
 					idx=0;
 				}
 			}
-			else{	
-				controlModule.fire('readyToPlay');
+			else{
+				if(this.isRunning){
+					controlModule.fire('readyToPlay');
+				}
 				this.isRunning=false;
 			}
 		}
@@ -1327,6 +1327,7 @@ var drawer={
 		this.paused=false;
 		gadgetModule.resetTimer();
 		gadgetModule.speed.innerHTML=roundNumber(this.speed, 2);
+		//controlModule.setAltitude(10);
 	},
 
 	segmentLength:function(nespeedTime, prev){
