@@ -1191,7 +1191,6 @@ var drawer={
 	},
 
 	wkDistance:0,
-
 	run:(function(){
 		var a=true;
 		var idx=0;
@@ -1202,18 +1201,15 @@ var drawer={
 			}
 
 			if(a){
-				
 				dt=Trail.getDelta(this.speedData[idx+1], this.speedTime);
 
 				a=(dt.time>=0) && (idx<this.speedData.length);
 
 				if(dt.time>0){
 					setTimeout(function(){
-						//gadgetModule.timer(dt.time);
 						this.run();	
 					}.bind(this), dt.time/this.speedTime);
 					this.wkDistance+=dt.distance;
-					
 				}
 				else{
 					this.run();
@@ -1230,8 +1226,7 @@ var drawer={
 				tm=dt.time;
 			}
 			else{
-				gadgetModule.timer(tm);
-				//console.log("last bit: "+tm);
+				gadgetModule.timer(tm);// last bit
 				if(this.isRunning){
 					controlModule.fire('readyToPlay');
 				}
@@ -1250,6 +1245,7 @@ var drawer={
 	isRecording:false,
 	record:(function(){
 		var a=true;
+		var tm=0;
 		return function(){
 			if(this.head==0){				
 				controlModule.fire('reset');
@@ -1259,6 +1255,7 @@ var drawer={
 
 			if(this.resetRecording){
 				a=true;
+				tm=0;
 				this.resetRecording=false;
 				this.dataR.length=0;
 				this.dataR.push([Trail.getGeoX(0), Trail.getGeoY(0)]);
@@ -1280,22 +1277,25 @@ var drawer={
 					this.dataR.push([dt.geoX, dt.geoY]);
 
 					this.timeOutID=setTimeout(function(){
-						gadgetModule.timer(dt.time);
+						
 						this.record();	
 					}.bind(this), dt.time/this.speedTime);
 	
 					this.wkDistance+=dt.distance;
-					gadgetModule.distance.innerHTML=roundNumber(this.wkDistance,2);
+					
 				}
 				else{
 					this.record();
 				}
+				gadgetModule.timer(tm);
+				tm=dt.time;
+				gadgetModule.distance.innerHTML=roundNumber(this.wkDistance,2);
 			}
 			else{
+				//gadgetModule.timer(tm);
 				this.altData.push(this.altitude);
 				this.speedData.push(this.speed);
 				this.dataR.push([Trail.getLastGeoX(), Trail.getLastGeoY()]);
-				//clearTimeout(timeOutID);
 				controlModule.fire('recordingFinished');
 				this.isRecording=false;
 			}
