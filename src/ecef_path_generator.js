@@ -1277,12 +1277,9 @@ var drawer={
 					this.dataR.push([dt.geoX, dt.geoY]);
 
 					this.timeOutID=setTimeout(function(){
-						
 						this.record();	
 					}.bind(this), dt.time/this.speedTime);
-	
 					this.wkDistance+=dt.distance;
-					
 				}
 				else{
 					this.record();
@@ -1292,7 +1289,6 @@ var drawer={
 				gadgetModule.distance.innerHTML=roundNumber(this.wkDistance,2);
 			}
 			else{
-				//gadgetModule.timer(tm);
 				this.altData.push(this.altitude);
 				this.speedData.push(this.speed);
 				this.dataR.push([Trail.getLastGeoX(), Trail.getLastGeoY()]);
