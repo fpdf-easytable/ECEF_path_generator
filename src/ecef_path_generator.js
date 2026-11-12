@@ -400,7 +400,9 @@ var map = L.map('map',{
 //####################################################################
 
 // add the OpenStreetMap tiles
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+L.tileLayer(
+tileProvider,
+{
 	attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
 }).addTo(map);
 
