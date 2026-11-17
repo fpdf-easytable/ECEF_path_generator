@@ -1,13 +1,13 @@
- /*********************************************************************
- * ecef_path_generator.js                                             *
- *                                                                    *
- * Version: 2.0                                                       *
- * Date:    28-01-2022                                                *
- * Author:  Dan Machado                                               *
- * Require  raphaeljs v2.2.1                                          *
- **********************************************************************/
+/*********************************************************************
+* ecef_path_generator.js                                             *
+*                                                                    *
+* Date:    28-01-2022 review 17-11-2026                              *
+* Author:  Dan Machado                                               *
+* Require  raphaeljs v2.2.1                                          *
+**********************************************************************/
 
-function roundNumber(x, p){
+function roundNumber(x, p)
+{
 	var d=2;
 	if(typeof p==='number') {
 		d=p;
@@ -18,7 +18,8 @@ function roundNumber(x, p){
 //##################################################################
 
 //to load a file
-function readSingleFile(e) {
+function readSingleFile(e)
+{
 	var file = e.target.files[0];
 	if(!file){
 		return;
@@ -33,10 +34,9 @@ function readSingleFile(e) {
 
 //##################################################################
 
-const defaultZoom=13.50;
-
-function ReadCookie(){
-	cookies={};
+function ReadCookie()
+{
+	var cookies={};
 	var allcookies = document.cookie;
 	var cookiearray = allcookies.split(';');
 	
@@ -44,6 +44,7 @@ function ReadCookie(){
 		name=cookiearray[i].split('=')[0];
 		cookies[name.trim()]=cookiearray[i].split('=')[1];
 	}
+
 	var lat;
 	var lng;
 	if(cookies.hasOwnProperty('latitude') && cookies.hasOwnProperty('longitude')){
@@ -53,9 +54,9 @@ function ReadCookie(){
 	if(!isNaN(lat) && !isNaN(lng)){
 		document.getElementById("latitude").value=cookies.latitude;
 		document.getElementById("longitude").value=cookies.longitude;
-		return {'lat':lat,  'lng':lng};
+		return {'lat':lat,  'lng':lng, 'mode':'custom'};
 	}
-	return {'lat':53.2672, 'lng':-1.63};
+	return {'lat':53.2672, 'lng':-1.63, 'mode':'default'};
 }
 
 //##################################################################
@@ -82,10 +83,6 @@ var mkVect2D=(function(){
 		multiply:function(t){
 			this.x*=t;
 			this.y*=t;
-		},
-		add2:function(x, y){
-			this.x+=x;
-			this.y+=y;
 		},
 		length:function(){
 			return distance2DPoints(this.x, this.y, 0, 0);
@@ -125,7 +122,7 @@ var mkVect2D=(function(){
 //####################################################################
 //####################################################################
 
-Conversion={
+var Conversion={
 	a : 1/60,
 	b: 1/3600,
 	kmToDDNorth:(function(){
@@ -176,12 +173,12 @@ Conversion={
 //####################################################################
 //####################################################################
 
-(function(){
+var Settings=(function(){
 	const baseFactor=206;
 	const initialZoom=14.25;
 	const zoomDelta=0.25;
 
-	Settings={	
+	var Settings={	
 		alt:30,
 		currentZoom:initialZoom,
 
@@ -204,16 +201,9 @@ Conversion={
 	return Settings;
 })();
 
-var map = L.map('map',{      
-		minZoom: 0,
-		zoomSnap: 0,
-		zoomDelta: 0.25,
-		zoomControl:false,
-});
-
 //####################################################################
 
-(function(){
+var globalSettings=(function(){
 	var container=document.getElementById('container');
 	var speedPanel=document.getElementById('speed-panel');
 	var diff=window.innerHeight-speedPanel.offsetHeight;
@@ -250,10 +240,10 @@ var map = L.map('map',{
 				this.grid.length=0;
 			}
 
-			var widthM=map.distance(map.containerPointToLatLng(L.point(0, 0)), map.containerPointToLatLng(L.point(this.Width, 0)));
+			var widthM=map.unproject([0, 0]).distanceTo(map.unproject([this.Width, 0]));
 			this.wMtPx=widthM/this.Width;
 
-			var heightM=map.distance(map.containerPointToLatLng(L.point(0, 0)), map.containerPointToLatLng(L.point(0, this.Height)));
+			var heightM=map.unproject([0, 0]).distanceTo(map.unproject([0, this.Height]));
 			this.hMtPx=heightM/this.Height;
 			
 			var hh=1000/this.hMtPx;
@@ -290,54 +280,21 @@ var map = L.map('map',{
 			return this.pixelsToKms(pxD)*1000.0;
 		},
 
-		containerPointToLatLng:function(pxX, pxY){
-			var mapCenter=map.getCenter();			
-			var lat=Number(mapCenter.lat+Conversion.kmToDDNorth((0.5*this.Height-pxY)*this.scFacInv));
-			var lng=Number(mapCenter.lng+Conversion.kmToDDEast(lat, (pxX-0.5*this.Width)*this.scFacInv));
-			return {'lat':lat, 'lng':lng};
- 		},
-
 		containerCenter:function(){
 			return mkVect2D(0.5*this.Width, 0.5*this.Height);
 		},
 
-		latLngToPixelCoordinates:function(latLng){
-			var R=this.mtsToPxs(map.distance(latLng, map.getCenter()));
-
+		latLngToPixelCoordinates:function(lnglat){
 			var center=this.containerCenter();
-			var pos=map.latLngToContainerPoint(latLng);
-
-			var r=distance2DPoints(center.x, center.y, pos.x, pos.y);
-			var factor=R/r;
-			var x=factor*Math.abs(center.x-pos.x);
-			var y=factor*Math.abs(center.y-pos.y);
-			
-			var pixelsCoordinates={x:(center.x+x), y:(center.y+y)};
-			
-			if(pos.x<=center.x){
-				pixelsCoordinates.x=center.x-x;
-			}
-
-			if(pos.y<=center.y){
-				pixelsCoordinates.y=center.y-y;
-			}
-			return pixelsCoordinates;
+			var pos = map.project([lnglat.lng, lnglat.lat]);
+			return {x:pos.x, y:pos.y};
 		},
 
-		latLngToMtsCoordinates:function(latLng){
-			var R=map.distance(latLng, map.getCenter());
+		latLngToMtsCoordinates:function(lnglat){
 
 			var center=this.containerCenter();
-
-			var pos=map.latLngToContainerPoint(latLng);
-			
-			var r=distance2DPoints(center.x, center.y, pos.x, pos.y);
-			var factor=R/r;
-
-			var px=factor*(pos.x-center.x);
-			var py=factor*(center.y-pos.y);
-			
-			return {x:px, y:py};
+			var pos = map.project([lnglat.lng, lnglat.lat]);
+			return mkVect2D(this.pixelsToMts(pos.x-center.x), this.pixelsToMts(center.y-pos.y));
 		},
 
 		mtsCoordinatesToPxs:function(x, y){
@@ -364,8 +321,8 @@ var map = L.map('map',{
 			};
 
 			function elementDraw(e) {
-				x=e.clientX;
-				y=e.clientY;
+				var x=e.clientX;
+				var y=e.clientY;
 				if(x>lx && x<rx && y>ly && y<ry){
 					cbk(x-lx, y-ly);
 				}
@@ -383,8 +340,8 @@ var map = L.map('map',{
 			var rx=lx+this.Width;
 			var ry=ly+this.Height;
 
-			x=e.clientX;
-			y=e.clientY;
+			var x=e.clientX;
+			var y=e.clientY;
 			if(x>lx && x<rx && y>ly && y<ry){
 				cbk(x-lx, y-ly);
 			}
@@ -393,22 +350,6 @@ var map = L.map('map',{
 
 	return globalSettings;
 })();
-
-
-//####################################################################
-//####################################################################
-//####################################################################
-
-// add the OpenStreetMap tiles
-L.tileLayer(
-tileProvider,
-{
-	attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-}).addTo(map);
-
-L.control.scale({maxWidth:300}).addTo(map);
-
-//map.setView([53.2672, -1.63], Settings.initialZoom());
 
 //####################################################################
 //####################################################################
@@ -437,7 +378,7 @@ var mkObjectEvt=(function(){
 //####################################################################
 //####################################################################
 
-(function(){
+var controlModule=(function(){
 	controlModule=mkObjectEvt();
 	controlModule.playButton=document.getElementById('playButton');
 	controlModule.pauseButton=document.getElementById('pauseButton');
@@ -484,14 +425,14 @@ var mkObjectEvt=(function(){
 			map.setZoom(zoomVal);
 		};
 		document.getElementById('zoom_less').addEventListener('click', function(){
-			if(zoomVal-0.25>=11){
+			if(zoomVal-0.25>=minZoomVal){
 				zoomVal-=0.25;
 				map.setZoom(zoomVal);
 			}
 		});
-		
+
 		document.getElementById('zoom_more').addEventListener('click', function(){
-			if(zoomVal+0.25<=17.0){
+			if(zoomVal+0.25<=maxZoomVal){
 				zoomVal+=0.25;
 				map.setZoom(zoomVal);
 			}
@@ -505,6 +446,7 @@ var mkObjectEvt=(function(){
 				document.getElementById('x_time').innerHTML='x'+xT;
 			}
 		};
+
 		document.getElementById('time_speed_less').addEventListener('click', function(){
 			if(xT>1){
 				xT--;
@@ -621,28 +563,10 @@ var mkObjectEvt=(function(){
 
 //####################################################################
 
-var ZoomViewer = L.Control.extend({
-	onAdd: function(){
-		var container= L.DomUtil.create('div');
-		var gauge = L.DomUtil.create('div');
-		container.style.width = '200px';
-		container.style.background = 'rgba(255,255,255,0.5)';
-		container.style.tespeedTimeAlign = 'left';
-		map.on('zoomstart zoom zoomend', function(ev){
-			var zp=map.getZoom();
-			//console.log(ev);
-			
-			gauge.innerHTML = 'Zoom level: ' + zp;
-			controlModule.fire('scaleChange', zp-globalSettings.baseZ);
-			//window.wx_msg.postMessage("zoom");
-			
-		})
-		container.appendChild(gauge);
-		return container;
-	}
+map.on('zoomend', ()=>{
+	var zp=map.getZoom();
+	controlModule.fire('scaleChange', zp-globalSettings.baseZ);
 });
-
-(new ZoomViewer).addTo(map);
 
 //####################################################################
 //####################################################################
@@ -714,58 +638,58 @@ var mkPOI=(function(){
 	var objectPOI={
 		geoPosition2D:null,// holds coordinates in meters from the center of the map
 		POI:null,
-		lat:'lat',
-		lng:0.0,
+		lnglat:null,
 
 		setAttr:function(attributes){
 			this.POI.attr(attributes);
 		},
 
-		pointToLatLng:function(x, y){
-			var latLng=globalSettings.containerPointToLatLng(x, y);
-			this.lat=latLng.lat;
-			this.lng=latLng.lng;
+		updateGeo:function(){
+			this.geoPosition2D=globalSettings.latLngToMtsCoordinates(this.lnglat);
 		},
 
 		setPositionXY:function(x, y){
 			this.POI.attr({transform: 't'+x+','+y});
 			this.POI.toFront();
-			this.pointToLatLng(x, y);
-			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+			this.lnglat=map.unproject([x, y]);
+			this.updateGeo();
 		},
 		
+		// This is used by Trail.addPointLatLng to load data from file. Geographic coordinates are saved as {'lat':Lat, 'lng':Lng}		
 		setLatLng:function(latLng){
-			this.lat=latLng.lat;
-			this.lng=latLng.lng;
+			this.lnglat=new maplibregl.LngLat(latLng.lng, latLng.lat);
 			var pos=globalSettings.latLngToPixelCoordinates(latLng);
 			this.POI.attr({transform: 't'+pos.x+','+pos.y});
 			this.POI.toFront();
-			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
+			this.updateGeo();
 		},
 
 		onZoom:function(){
-			var pos=globalSettings.latLngToPixelCoordinates({'lat':this.lat, 'lng':this.lng});
+			var pos=globalSettings.latLngToPixelCoordinates(this.lnglat);
 			this.POI.attr({transform: 't'+pos.x+','+pos.y});
 			this.POI.toFront();
 		},
-		
+
 		translate:function(x, y){
 			this.POI.translate(x, y);
 			this.POI.toFront();
-			this.geoPosition2D=globalSettings.latLngToMtsCoordinates({'lat':this.lat, 'lng':this.lng});
-			return; 
+			this.updateGeo();
 		},
 
 		getGeoX:function(){
 			return this.geoPosition2D.x;
-		},	
+		},
 
 		getGeoY:function(){
 			return this.geoPosition2D.y;
 		},
+		
+		getGeo:function(){
+			return this.geoPosition2D;
+		},
 
 		positionToECEF:function(altitude){
-			Conversion.toECEF(this.lat, this.lng, altitude);
+			Conversion.toECEF(this.lnglat.lat, this.lnglat.lng, altitude);
 		},
 
 		remove:function(){
@@ -773,7 +697,7 @@ var mkPOI=(function(){
 		},
 
 		getLatLng:function(){
-			return {'lat':this.lat, 'lng':this.lng};
+			return this.lnglat;
 		},
 
 		setColour:function(colour){
@@ -796,7 +720,6 @@ var mkPOI=(function(){
 
 		module.POI=globalSettings.paper.circle(0, 0, poiR);
 		module.POI.attr(att);
-		//module.POI.attr({transform: 't0,0'});
 		module.setPositionXY(x, y);
 
 		return module;
@@ -806,15 +729,15 @@ var mkPOI=(function(){
 //####################################################################
 //####################################################################
 
-(function(){
+var Trail=(function(){
 	Trail={
 		set:[],
 		directions:[],
-		//distances:[],
+		isTranslating:false,
 
-		looping:function(doSomething){
+		looping:function(cbk){
 			for(var i=0; i<this.set.length; i++){
-				doSomething(this.set[i]);
+				cbk(this.set[i]);
 			}
 		},
 
@@ -831,8 +754,15 @@ var mkPOI=(function(){
 				shape.translate(x, y);
 			});
 
-			this.mover.translate(x, y);
-			this.mover.toFront();
+			if(this.set.length>0){
+				this.currentGeoPos=this.set[0].getGeo();
+				var pos=globalSettings.latLngToPixelCoordinates(this.set[0].getLatLng());
+
+				this.mover.attr({transform: 't'+pos.x+','+pos.y});
+				this.mover.toFront();
+			}
+	
+			this.isTranslating=false;
 		},
 
 		reset:function(){
@@ -869,17 +799,18 @@ var mkPOI=(function(){
 
 		addPoint:function(x, y){
 			this.set.push(mkPOI(x, y, {stroke:'none', fill: this.trailPOIcolour}));
-			this.setUp();
+			this.update();
 		},
 
+		// This is used to load data from file. Geographic coordinates are saved as {'lat':Lat, 'lng':Lng}
 		addPointLatLng:function(latLng){
 			this.set.push(mkPOI(0, 0, {stroke:'none', fill: this.trailPOIcolour}));
 			var k=this.set.length-1;
 			this.set[k].setLatLng(latLng);
-			this.setUp();
+			this.update();
 		},
 		
-		setUp:function(){
+		update:function(){
 			if(this.set.length>1){
 				var i=this.set.length-1;
 				this.directions.push(mkVect2D(this.getGeoX(i)-this.getGeoX(i-1), (this.getGeoY(i-1)-this.getGeoY(i))));
@@ -895,7 +826,7 @@ var mkPOI=(function(){
 
 		segmentMtLength:function(idx){
 			if(idx<this.set.length-1){
-				return distance2DPoints(this.getGeoX(idx), this.getGeoY(idx), this.getGeoX(idx+1), this.getGeoY(idx+1));			
+				return distance2DPoints(this.getGeoX(idx), this.getGeoY(idx), this.getGeoX(idx+1), this.getGeoY(idx+1));
 			}
 			throw "something wrong in segmentMtLength";
 		},
@@ -916,13 +847,22 @@ var mkPOI=(function(){
 			return this.set[this.set.length-1].getGeoY();
 		},
 
+		getPxCoordinates:function(idx){
+			var pos = map.project(this.set[idx].getLatLng());
+			return {'x':pos.x, 'y':pos.y};
+		},
+
+		getLastPxCoordinates:function(){
+			return this.getPxCoordinates(this.set.length-1);
+		},
+
 		currentGeoPos:mkVect2D(0, 0),
 
 		moveToStart:function(){
 			if(this.set.length>0){
-				this.currentGeoPos.setPositionAt(this.getGeoX(0),this.getGeoY(0));
+				this.currentGeoPos=this.set[0].getGeo();
 				this.mover.attr(globalSettings.mtsCooPxs2(this.currentGeoPos.x, this.currentGeoPos.y));
-				this.mover.toFront();				
+				this.mover.toFront();
 				this.segmentNum=0;
 			}
 		},
@@ -1055,6 +995,7 @@ var drawer={
 			document.getElementById('moveToBtn').style.fontWeight="normal";
 			drawer.play();
 		});
+
 		controlModule.addHandler('record', function(){
 			drawer.isRecording=true;
 			drawer.getPositionFromPointer=false;
@@ -1085,7 +1026,9 @@ var drawer={
 		controlModule.addHandler('scaleChange', function(x){			
 			if(drawer.mapReady()){
 				globalSettings.mkGrid();
-				Trail.onZoom();
+				if(Trail.isTranslating==false) {
+					Trail.onZoom();
+				}
 			}
 		});
 	
@@ -1096,20 +1039,24 @@ var drawer={
 
 		controlModule.setAltitude(10);
 	},
+
 	mxG:10,
 	speedData:[],
 	altData:[],
 	lastX:0.0,
 	lastY:0.0,
+
 	getData:function(x, y){
 		if(this.status>0 || this.getPositionFromPointer){
 			return;
 		}
+
 		var d=0;
 		if(this.head>0){
-			var pxC=globalSettings.mtsCoordinatesToPxs(Trail.getGeoX(this.head-1), Trail.getGeoY(this.head-1));
-			this.lastX=pxC.x;
-			this.lastY=pxC.y;
+			var lastPos=Trail.getLastPxCoordinates();
+			this.lastX=lastPos.x;
+			this.lastY=lastPos.y;
+
 			d=distance2DPoints(this.lastX, this.lastY, x, y);
 		}
 
@@ -1130,7 +1077,7 @@ var drawer={
 			for(var j=1; j<r; j++){
 				Trail.addPoint(this.lastX+j*tx*f, this.lastY+j*ty*g);
 				this.head++;
-			}
+			}		
 		}
 
 		if(d>this.mxG || this.head==0){
@@ -1203,7 +1150,7 @@ var drawer={
 			}
 
 			if(a){
-				dt=Trail.getDelta(this.speedData[idx+1], this.speedTime);
+				var dt=Trail.getDelta(this.speedData[idx+1], this.speedTime);
 
 				a=(dt.time>=0) && (idx<this.speedData.length);
 
@@ -1273,7 +1220,7 @@ var drawer={
 			if(a){
 				this.altData.push(this.altitude);
 				this.speedData.push(this.speed);
-				dt=Trail.getDelta(this.speed, this.speedTime);
+				var dt=Trail.getDelta(this.speed, this.speedTime);
 				a=dt.time>=0;
 				if(dt.time>0){
 					this.dataR.push([dt.geoX, dt.geoY]);
@@ -1348,10 +1295,16 @@ var drawer={
 	mapReady:function(){
 		return this.isMapReady;
 	},
+
 	setCoordinates:function(lat, lng, zoomLevel){
 		this.offSetX=Number(lng);
 		this.offSetY=Number(lat);
-		map.setView([Number(lat), Number(lng)], zoomLevel);
+
+		map.flyTo({
+		  center: [lng, lat],
+	  	  zoom: zoomLevel
+		});		
+
 		this.isMapReady=true;
 		globalSettings.mkGrid();
 	},
@@ -1541,6 +1494,7 @@ var drawer={
 			if(dataFile.hasOwnProperty('zoom')){
 				zm=dataFile['zoom']
 			}
+			
 			this.setCoordinates(dataFile['coordinates'].lat, dataFile['coordinates'].lng, zm);
 		}
 		
@@ -1646,8 +1600,8 @@ function download(fileName, data, dataType)
 //####################################################################
 
 drawer.init();	
-
-controlModule.setZoom(13.50);
+//
+// controlModule.setZoom(13.50);
 
 //####################################################################
 
@@ -1658,7 +1612,7 @@ window.addEventListener("keydown", function(event){
 	else if(event.keyCode==37 || event.keyCode==39){//slow=37; fast=39 {
 		drawer.changeSpeed(event.keyCode);
 	}
-	else if(event.keyCode==81 || event.keyCode==87){// q w
+	else if(event.keyCode==81 || event.keyCode==87){//q w
 		drawer.changeSpeed(event.keyCode);
 	}
 	else if(event.keyCode==65 || event.keyCode==83){//a s
@@ -1822,16 +1776,20 @@ window.addEventListener("DOMContentLoaded", function(){
 		document.getElementById('canvasContainer').addEventListener('mousedown', function(e){
 			if(drawer.getPositionFromPointer){// && drawer.status==0){
 				globalSettings.getPosition3(function(x,y){
-					var latLng=globalSettings.containerPointToLatLng(x, y);
 
-					drawer.setCoordinates(latLng.lat, latLng.lng, map.getZoom());
-
+					const geoPoint = map.unproject([x, y]);
+					Trail.isTranslating=true;
 					map.once("moveend", function(){
 						var org=globalSettings.containerCenter();
-						org.add2(-1*x, -1*y);
-						Trail.onTranslate(org.x, org.y);
-					}.bind(this));					
-				}, e);				
+
+						let vx=org.x-x;					
+						let vy=org.y-y;
+
+						Trail.onTranslate(vx, vy);
+					}.bind(this));
+					
+					drawer.setCoordinates(geoPoint.lat, geoPoint.lng, map.getZoom());			
+				}, e);
 			}
 		});
 
@@ -1879,7 +1837,24 @@ window.addEventListener("DOMContentLoaded", function(){
 		}
 
 		var latLng=ReadCookie();
-		drawer.setCoordinates(latLng.lat, latLng.lng, defaultZoom);
+
+		/*		
+		if (latLng.mode=="default") {
+			if (navigator.geolocation) {
+    			navigator.geolocation.getCurrentPosition(function(position){
+    				latLng={'lat':position.coords.latitude, 'lng':position.coords.longitude};
+    				document.cookie='longitude='+longitude;
+					document.cookie='latitude='+latitude;
+    				drawer.setCoordinates(latLng.lat, latLng.lng, defaultZoom);
+    			});
+  			} else { 
+		   	alert("Geolocation is not supported by this browser.");
+			}
+		}
+		// */
+		setTimeout(function(){
+				drawer.setCoordinates(latLng.lat, latLng.lng, defaultZoom);
+		}, 500);
 
 	})();
 })
